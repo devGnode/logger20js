@@ -1,4 +1,4 @@
-# seleniumJs
+# logger20js-ts
 
 <img src="https://img.shields.io/badge/Git version-1.0.0-yellowgreen"/> <img src="https://img.shields.io/github/languages/top/devGnode/SeleniumJs"/> <img src="https://img.shields.io/badge/Javascript-ES2020-yellow"/> <img src="https://img.shields.io/npm/v/logger20js-ts"/> <img src="https://img.shields.io/node/v/logger20js-ts"/>
 
