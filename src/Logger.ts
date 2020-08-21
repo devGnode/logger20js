@@ -129,7 +129,7 @@ export class Logger{
                 HH:h, mm: m, ss: s, ssss: ss,
                 T: type.substr(0,1).toUpperCase(),
             }).each((value,key)=>{
-                errorMsg = errorMsg.replace(new RegExp(/`\%${key}`/g),value.toString());
+                errorMsg = errorMsg.replace(new RegExp(`\%${key}`),value.toString());
             });
 
             // merge error line
