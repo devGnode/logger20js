@@ -120,7 +120,7 @@ export class Logger{
                s = Utils.round(d.getSeconds()),
                ss= d.getMilliseconds() ;
 
-           Object().stream.of( {
+           Object().stream().of( {
                 type : type,
                 name : args.shift(),
                 error: format.apply(null,args),
