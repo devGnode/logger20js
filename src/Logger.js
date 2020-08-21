@@ -107,7 +107,7 @@ var Logger = /** @class */ (function () {
         var args = Array.from(arguments), type = args.shift().toUpperCase(), errorMsg = Logger.parser;
         if (Logger.logLevel.indexOf(type.toUpperCase()) > -1 || Logger.logLevel.indexOf("ALL") > -1) {
             var d = new Date(), h = Utils_1.Utils.round(d.getHours()), m = Utils_1.Utils.round(d.getMinutes()), s = Utils_1.Utils.round(d.getSeconds()), ss = d.getMilliseconds();
-            Object().stream.of({
+            Object().stream().of({
                 type: type,
                 name: args.shift(),
                 error: format.apply(null, args),

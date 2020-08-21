@@ -1,6 +1,6 @@
 {
   "name": "logger20js-ts",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "author": "Maroder - <devgnode@gmail.com>",
   "description": "logger for nodejs",
   "main": "bin/Logger20js.js",
