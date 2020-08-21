@@ -9,7 +9,7 @@ export class Logger{
     /***
      * Basic configuration
      */
-    private static parser    : String   = "[%HH:%mm:%ss] %T/%name - %error";
+    private static parser    : String   = "[%hours] %T/%name - %error";
     private static outputLog : string   = "";
     private static saveLog   : boolean  = false;
     private static logStdout : boolean  = true;
@@ -125,7 +125,7 @@ export class Logger{
                 name : args.shift(),
                 error: format.apply(null,args),
                 time : d.getTime(),
-                hours: format("\x1b[32m%s:%s:%s\1xb[0m",h,m,s),
+                hours: format("\x1b[35m%s:%s:%s\x1b[0m",h,m,s),
                 HH:h, mm: m, ss: s, ssss: ss,
                 T: type.substr(0,1).toUpperCase(),
             }).each((value,key)=>{
