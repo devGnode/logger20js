@@ -112,7 +112,7 @@ var Logger = /** @class */ (function () {
                 name: args.shift(),
                 error: format.apply(null, args),
                 time: d.getTime(),
-                hours: format("\x1b[32m%s:%s:%s[0m", h, m, s),
+                hours: format("\x1b[32m%s:%s:%s\1xb[0m", h, m, s),
                 HH: h, mm: m, ss: s, ssss: ss,
                 T: type.substr(0, 1).toUpperCase(),
             }).each(function (value, key) {
