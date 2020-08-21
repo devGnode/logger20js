@@ -1,6 +1,6 @@
 # seleniumJs
 
-<img src="https://img.shields.io/badge/Git version-1.0.0-yellowgreen"/> <img src="https://img.shields.io/github/languages/top/devGnode/SeleniumJs"/> <img src="https://img.shields.io/badge/Javascript-ES2020-yellow"/> <img src="https://img.shields.io/npm/v/logger20js"/> <img src="https://img.shields.io/node/v/logger20js"/>
+<img src="https://img.shields.io/badge/Git version-1.0.0-yellowgreen"/> <img src="https://img.shields.io/github/languages/top/devGnode/SeleniumJs"/> <img src="https://img.shields.io/badge/Javascript-ES2020-yellow"/> <img src="https://img.shields.io/npm/v/logger20js-ts"/> <img src="https://img.shields.io/node/v/logger20js-ts"/>
 
 Little basic framework Logger for nodeJs or typescript project.
 
@@ -11,7 +11,7 @@ This framework has been written in typescript.
 #### Import from npm repository package
 
 ``
-$ npm i logger20js
+$ npm i logger20js-ts
 ``
 
 ### Parser
@@ -34,7 +34,7 @@ Another pattern `[%HH:%mm:%ss] %T/%name - %error`.
 Example :
 
 ```javascript
-const {Logger}     = require("logger20js");
+const {Logger}     = require("logger20js-ts");
 
 
 class MyClass{
@@ -56,7 +56,7 @@ output :
 ````
 
 ```javascript
-const {Logger}     = require("logger20js");
+const {Logger}     = require("logger20js-ts");
 Logger.setParser("[%HH:%mm:%ss] %T/%name - %error");
 
 
@@ -119,7 +119,7 @@ properties keys accepted :
 - logLevel : ***String[]*** 
             
 ```javascript
-const {Logger}     = require("logger20js");
+const {Logger}     = require("logger20js-ts");
 
 class PropertiesConfig{
     

@@ -1,4 +1,5 @@
 export declare class Utils {
+    static round(value?: any): any;
     /***
      *
      * @param outputLogDir

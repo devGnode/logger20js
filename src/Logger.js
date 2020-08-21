@@ -68,7 +68,7 @@ var Logger = /** @class */ (function () {
             args[_i] = arguments[_i];
         }
         var tmp = Logger.parser;
-        Logger.parser = Logger.parser.replace(/\%error/, "\r\n%error");
+        Logger.parser = Logger.parser.replace(/\%error/g, "\r\n%error");
         Logger.stdout.apply(null, ["custom", this.name].concat(Array.from(arguments)));
         Logger.parser = tmp;
     };
@@ -104,19 +104,19 @@ var Logger = /** @class */ (function () {
      * @param type, errorMsg [, Object .... ]
      */
     Logger.stdout = function () {
-        var args = Array.from(arguments), type = args.shift().toUpperCase();
-        var errorMsg = Logger.parser;
+        var args = Array.from(arguments), type = args.shift().toUpperCase(), errorMsg = Logger.parser;
         if (Logger.logLevel.indexOf(type.toUpperCase()) > -1 || Logger.logLevel.indexOf("ALL") > -1) {
-            var d = new Date();
+            var d = new Date(), h = Utils_1.Utils.round(d.getHours()), m = Utils_1.Utils.round(d.getMinutes()), s = Utils_1.Utils.round(d.getSeconds()), ss = d.getMilliseconds();
             Object().stream.of({
                 type: type,
                 name: args.shift(),
                 error: format.apply(null, args),
                 time: d.getTime(),
-                hours: format("\x1b[32m%s:%s:%s[0m", d.getHours(), d.getMinutes(), d.getSeconds()),
-                HH: d.getHours(), mm: d.getMinutes(), ss: d.getSeconds(), T: type.substr(0, 1),
+                hours: format("\x1b[32m%s:%s:%s[0m", h, m, s),
+                HH: h, mm: m, ss: s, ssss: ss,
+                T: type.substr(0, 1).toUpperCase(),
             }).each(function (value, key) {
-                errorMsg = errorMsg.replace(new RegExp(/`\%${key}`/g), value);
+                errorMsg = errorMsg.replace(new RegExp(/`\%${key}`/g), value.toString());
             });
             // merge error line
             if (Logger.saveLog) {

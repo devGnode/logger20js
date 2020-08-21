@@ -5,6 +5,12 @@ var fs_1 = require("fs");
 var Utils = /** @class */ (function () {
     function Utils() {
     }
+    Utils.round = function (value) {
+        if (value === void 0) { value = null; }
+        if (value !== null)
+            return value.toString().length === 1 ? "0" + value : value;
+        return value;
+    };
     /***
      *
      * @param outputLogDir
