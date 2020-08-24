@@ -19,8 +19,8 @@ $ npm i logger20js-ts
 
 parser   | utility   
 ------------ | -------------    
-type        |  Level type [ALL,LOG,ERROR,WARN,INFO,DEBUG,CUSTOM]
-T           | Level type first character [A,L,E,W,I,D,C]
+type        |  Level type [LOG,ERROR,WARN,INFO,DEBUG,CUSTOM]
+T           | Level type first character [L,E,W,I,D,C]
 name        | Logger name
 time        | TimeStamp 32 bits
 hours       | format type &rarr; HH:mm:ss
@@ -44,7 +44,6 @@ class MyClass{
     func(){
         MyClass.LOG.log("one example with args %s - %s ", "foo",123); 
     }    
-}
 
 }
 ```
@@ -68,7 +67,6 @@ class MyClass{
         MyClass.LOG.log("one example with args %s - %s ", "foo",123);
         MyClass.LOG.warn("second example with args %s - %s ", "foo",123);
     }    
-}
 
 }
 ```
@@ -76,6 +74,48 @@ class MyClass{
 ````text
 [22:33:40] L/MyClass - one example with args foo - 123
 [22:33:40] W/MyClass - second example with args foo - 123
+````
+
+### Log level
+
+- ALL ***default***
+- INFO
+- LOG
+- DEBUG
+- WARN
+- ERROR
+- CUSTOM 
+
+You can customize your Stdout logging level with the Logger with `Logger.level` or from your own class properties with the` log Level` property.
+
+```javascript
+Logger.level(["INFO","WARN"]);
+````
+
+### Set path to the log file
+
+```javascript
+Logger.setSaveLog(true);
+Logger.setOutputLog(process.cwd()+"/logs");
+````
+
+### log file name
+
+parser   | utility   
+------------ | -------------    
+id           |  uuid hash
+date         | LocalDate format : YYYY-dd-mm
+HH          | hours number type
+mm          | minutes number type
+ss          | seconds number type
+reuse        | allow reuse of an existing log file
+
+- fileNamePattern : default `%date-%id`
+
+if you want use the `reuse` pattern in your filename, you make sur you have define the re-use file path `Logger.setLogFileReuse`.
+
+```javascript
+Logger.setLogFilePattern("environment-%date-%id");
 ````
 
 ### static access
@@ -86,15 +126,19 @@ class MyClass{
 
 #### Configuration
 
-- setParser( parser : ***String*** ) : void
+- setParser( parser : ***String*** ) : void 
 - setOutputLog( path : ***string*** ) : void
 - setSaveLog( saveInFile : ***boolean*** ) : void
 - setLogStdout( stout : ***boolean*** ) : void
 - level( level : ***Array*** ) : void
+- setLogFilePattern( pattern : ***String*** ) : void
+- setFileMaxSize( bytes : ***number*** ) : void
 
 #### create redirect stdout message parsed
 
 - setPipeStdout( pipe : ***Object*** ) : void
+
+The object passed in parameters must contain the `write` method.
 
 ```javascript
     Logger.setPipeStdout({
@@ -104,7 +148,7 @@ class MyClass{
     });
 ```
     
-#### set owns properties from class
+#### set your owns properties from class
 
 you can override the properties configuration for your logger.
 
@@ -112,11 +156,15 @@ you can override the properties configuration for your logger.
 
 properties keys accepted :
 
-- loggerParser : ***String*** 
-- loggerOutputDir  : ***string***
-- saveLog : ***boolean*** 
-- logStdout : ***boolean***
-- logLevel : ***String[]*** 
+- loggerParser : ***String*** default `%time\t%name\t: %type :\t%error`
+- loggerOutputDir  : ***string*** default ` `
+- saveLog : ***boolean***  default `false`
+- logStdout : ***boolean*** default `true`
+- logLevel : ***String[]***  default `["ALL"]`
+- logPrefixFileName : ***String*** default `null`
+- logFileNamePattern : ***String*** default `%date-%id`
+- logFileMaxSize  : ***number*** default `null`
+- logFileReusePath : ***string*** default `null`
             
 ```javascript
 const {Logger}     = require("logger20js-ts");

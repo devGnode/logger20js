@@ -7,6 +7,7 @@ export declare class Logger {
     private static saveLog;
     private static logStdout;
     private static logLevel;
+    private static colorize;
     /**
      * output file
      */
@@ -16,6 +17,9 @@ export declare class Logger {
      */
     private static pipeStdout;
     private static propertiesConfig;
+    private static fileNamePattern;
+    private static logfileReuse;
+    private static fileMaxSize;
     /***
      * others
      */
@@ -33,6 +37,9 @@ export declare class Logger {
     static setLogStdout(stdout?: boolean): void;
     static setParser(parsing?: String): void;
     static level(level?: String[]): void;
+    static setLogFilePattern(pattern?: String): void;
+    static setFileMaxSize(bytes?: number): void;
+    static setLogFileReuse(path?: String): void;
     static setPipeStdout(pipe?: any): void;
     /***
      * @param type, errorMsg [, Object .... ]

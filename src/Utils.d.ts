@@ -1,5 +1,13 @@
 export declare class Utils {
+    /***
+     * @param value
+     */
     static round(value?: any): any;
+    /***
+     * @param filename
+     */
+    static getFileSize(filename?: string): number;
+    static regExp(regexp?: RegExp, value?: string, callback?: Function): string;
     /***
      *
      * @param outputLogDir
@@ -7,7 +15,7 @@ export declare class Utils {
      * @param data
      * @return void
      */
-    static writeLog(outputLogDir?: string, fileName?: string, data?: any): void;
+    static writeLog(outputLogDir?: string, fileName?: String, data?: any): void;
     /***
      * @param directory
      * @return {boolean}
