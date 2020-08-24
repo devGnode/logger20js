@@ -128,11 +128,11 @@ var Logger = /** @class */ (function () {
             Object().stream().of({
                 type: type,
                 name: args.shift(),
-                error: format.apply(null, args),
                 time: d.getTime(),
                 hours: format("%s:%s:%s", h, m, s),
                 HH: h, mm: m, ss: s, ssss: ss,
                 T: type.substr(0, 1).toUpperCase(),
+                error: format.apply(null, args),
             }).each(function (value, key) {
                 // @ts-ignore
                 errorMsg = Utils_1.Utils.regExp(new RegExp("%" + key), errorMsg, function () { return value.toString(); });

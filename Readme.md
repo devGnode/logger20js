@@ -132,7 +132,8 @@ Logger.setLogFilePattern("environment-%date-%id");
 - setLogStdout( stout : ***boolean*** ) : void
 - level( level : ***Array*** ) : void
 - setLogFilePattern( pattern : ***String*** ) : void
-- setFileMaxSize( bytes : ***number*** ) : void
+- setFileMaxSize( bytes : ***Number*** ) : void
+- setLogFilePattern( path : ***String*** ) : void
 
 #### create redirect stdout message parsed
 
