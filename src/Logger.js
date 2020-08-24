@@ -25,7 +25,7 @@ var Logger = /** @class */ (function () {
             Logger.logStdout = Logger.propertiesConfig.getProperty("logStdout", true);
             Logger.logLevel = Logger.propertiesConfig.getProperty("logLevel", ["ALL"]);
             Logger.fileNamePattern = Logger.propertiesConfig.getProperty("logFileNamePattern", "%date-%id");
-            Logger.fileMaxSize = Logger.propertiesConfig.getProperty("loggerFileMaxSize", null);
+            Logger.fileMaxSize = Logger.propertiesConfig.getProperty("logFileMaxSize", null);
             Logger.logfileReuse = Logger.propertiesConfig.getProperty("logFileReusePath", null);
         }
         this.name = name;
@@ -148,7 +148,12 @@ var Logger = /** @class */ (function () {
                     filename_1 = filename_1.replace(new RegExp("%" + key), value);
                 });
                 if (Logger.fileMaxSize === null || (Logger.fileMaxSize >= 0 && Utils_1.Utils.getFileSize(Logger.outputLog + ("/" + filename_1 + ".log")) <= Logger.fileMaxSize)) {
-                    Utils_1.Utils.writeLog(Logger.outputLog, filename_1, errorMsg);
+                    try {
+                        Utils_1.Utils.writeLog(Logger.outputLog, filename_1, errorMsg);
+                    }
+                    catch (e) {
+                        console.warn(e);
+                    }
                 }
             }
             if (Logger.logStdout) {
