@@ -5,10 +5,44 @@ var fs_1 = require("fs");
 var Utils = /** @class */ (function () {
     function Utils() {
     }
+    /***
+     * @param value
+     */
     Utils.round = function (value) {
         if (value === void 0) { value = null; }
         if (value !== null)
             return value.toString().length === 1 ? "0" + value : value;
+        return value;
+    };
+    /***
+     * @param filename
+     */
+    Utils.getFileSize = function (filename) {
+        if (filename === void 0) { filename = ""; }
+        try {
+            var stats = fs_1.statSync(filename);
+            return stats["size"];
+        }
+        catch (e) {
+            return 0;
+        }
+    };
+    Utils.regExp = function (regexp, value, callback) {
+        if (regexp === void 0) { regexp = /.+/; }
+        if (value === void 0) { value = ""; }
+        if (callback === void 0) { callback = undefined; }
+        if (typeof value !== "string")
+            return value;
+        try {
+            var tmp = void 0, toReplace = void 0;
+            while ((tmp = regexp.exec(value))) {
+                toReplace = callback !== undefined ? callback.call(tmp, value) : "";
+                value = value.replace(tmp[0], toReplace);
+            }
+        }
+        catch (e) {
+            return value;
+        }
         return value;
     };
     /***

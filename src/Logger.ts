@@ -9,11 +9,12 @@ export class Logger{
     /***
      * Basic configuration
      */
-    private static parser    : String   = "[%hours] %T/%name - %error";
+    private static parser    : String   = "[%hours] %T/%name - %hours - %error";
     private static outputLog : string   = "";
     private static saveLog   : boolean  = false;
     private static logStdout : boolean  = true;
     private static logLevel  : String[] = ["ALL"];
+    private static colorize : boolean = true;
 
     /**
      * output file
@@ -23,8 +24,11 @@ export class Logger{
     /***
      * handles
      */
-    private static pipeStdout : any       = null;
-    private static propertiesConfig : any = null;
+    private static pipeStdout : any         = null;
+    private static propertiesConfig : any   = null;
+    private static fileNamePattern : String = "%date-%id";
+    private static logfileReuse : String    = null;
+    private static fileMaxSize  : number    = null;
 
     /***
      * others
@@ -45,6 +49,9 @@ export class Logger{
             Logger.saveLog      = Logger.propertiesConfig.getProperty("saveLog", true);
             Logger.logStdout    = Logger.propertiesConfig.getProperty("logStdout", true);
             Logger.logLevel     = Logger.propertiesConfig.getProperty("logLevel", ["ALL"]);
+            Logger.fileNamePattern = Logger.propertiesConfig.getProperty("logFileNamePattern","%date-%id");
+            Logger.fileMaxSize     = Logger.propertiesConfig.getProperty("logFileMaxSize",null);
+            Logger.logfileReuse    = Logger.propertiesConfig.getProperty("logFileReusePath",null);
         }
 
         this.name = name;
@@ -93,12 +100,24 @@ export class Logger{
         Logger.logStdout = stdout;
     }
 
-    public static setParser( parsing : String = "") : void {
+    public static setParser( parsing : String = Logger.parser ) : void {
         Logger.parser = parsing;
     }
 
     public static level( level : String[] = [] ) : void {
         Logger.logLevel = level;
+    }
+
+    public static setLogFilePattern( pattern : String = Logger.fileNamePattern ) : void {
+        Logger.fileNamePattern = pattern;
+    }
+
+    public static setFileMaxSize(bytes : number = null) : void {
+        Logger.fileMaxSize = bytes;
+    }
+
+    public static setLogFileReuse( path : String = null ) : void {
+        Logger.logfileReuse = path;
     }
 
     public static setPipeStdout( pipe : any = null ) : void {
@@ -120,28 +139,50 @@ export class Logger{
                s = Utils.round(d.getSeconds()),
                ss= d.getMilliseconds() ;
 
+           // colors next-ticket
+           // \x1b[35m%s\x1b[0m
+           args.map(value=>typeof value==="object"?JSON.stringify(value):value);
            Object().stream().of( {
                 type : type,
                 name : args.shift(),
                 error: format.apply(null,args),
                 time : d.getTime(),
-                hours: format("\x1b[35m%s:%s:%s\x1b[0m",h,m,s),
+                hours: format("%s:%s:%s",h,m,s),
                 HH:h, mm: m, ss: s, ssss: ss,
                 T: type.substr(0,1).toUpperCase(),
             }).each((value,key)=>{
-                errorMsg = errorMsg.replace(new RegExp(`\%${key}`),value.toString());
+                // @ts-ignore
+               errorMsg = Utils.regExp(new RegExp(`\%${key}`),errorMsg,()=>value.toString());
             });
 
-            // merge error line
-            if(Logger.saveLog){
-               Utils.writeLog(
-                    Logger.outputLog,
-                    format("%s-%s",(new Date()).toLocaleDateString( ).replace(/\//g,"-"),Logger.oid),
-                    errorMsg
-                );
-            }
+           if(Logger.saveLog){
+               let filename = Logger.fileNamePattern;
+               Object().stream().of({
+                   id : Logger.oid,
+                   date : d.toLocaleDateString( ).replace(/\//g,"-"),
+                   HH:h, mm: m, ss: s, ssss: ss,
+                   reuse: Logger.logfileReuse
+               }).each((value,key)=>{
+                   filename = filename.replace(new RegExp(`\%${key}`),value);
+               });
+
+               if( Logger.fileMaxSize===null || ( Logger.fileMaxSize>=0 && Utils.getFileSize(Logger.outputLog+`/${filename}.log`) <= Logger.fileMaxSize )){
+                   try {
+                       Utils.writeLog(
+                           Logger.outputLog,
+                           filename,
+                           errorMsg
+                       );
+                   }catch (e) {
+                       console.warn(e);
+                   }
+               }
+           }
             if(Logger.logStdout) {
-                if(Logger.pipeStdout!==null) this.pipeStdout.write(errorMsg); else console.log(errorMsg);
+                if(Logger.pipeStdout!==null) this.pipeStdout.write(errorMsg); else {
+                    // @ts-ignore
+                    process.stdout.write(errorMsg+"\n");
+                }
             }
         }
     }

@@ -24,6 +24,9 @@ var Logger = /** @class */ (function () {
             Logger.saveLog = Logger.propertiesConfig.getProperty("saveLog", true);
             Logger.logStdout = Logger.propertiesConfig.getProperty("logStdout", true);
             Logger.logLevel = Logger.propertiesConfig.getProperty("logLevel", ["ALL"]);
+            Logger.fileNamePattern = Logger.propertiesConfig.getProperty("logFileNamePattern", "%date-%id");
+            Logger.fileMaxSize = Logger.propertiesConfig.getProperty("loggerFileMaxSize", null);
+            Logger.logfileReuse = Logger.propertiesConfig.getProperty("logFileReusePath", null);
         }
         this.name = name;
     }
@@ -89,12 +92,24 @@ var Logger = /** @class */ (function () {
         Logger.logStdout = stdout;
     };
     Logger.setParser = function (parsing) {
-        if (parsing === void 0) { parsing = ""; }
+        if (parsing === void 0) { parsing = Logger.parser; }
         Logger.parser = parsing;
     };
     Logger.level = function (level) {
         if (level === void 0) { level = []; }
         Logger.logLevel = level;
+    };
+    Logger.setLogFilePattern = function (pattern) {
+        if (pattern === void 0) { pattern = Logger.fileNamePattern; }
+        Logger.fileNamePattern = pattern;
+    };
+    Logger.setFileMaxSize = function (bytes) {
+        if (bytes === void 0) { bytes = null; }
+        Logger.fileMaxSize = bytes;
+    };
+    Logger.setLogFileReuse = function (path) {
+        if (path === void 0) { path = null; }
+        Logger.logfileReuse = path;
     };
     Logger.setPipeStdout = function (pipe) {
         if (pipe === void 0) { pipe = null; }
@@ -107,26 +122,42 @@ var Logger = /** @class */ (function () {
         var args = Array.from(arguments), type = args.shift().toUpperCase(), errorMsg = Logger.parser;
         if (Logger.logLevel.indexOf(type.toUpperCase()) > -1 || Logger.logLevel.indexOf("ALL") > -1) {
             var d = new Date(), h = Utils_1.Utils.round(d.getHours()), m = Utils_1.Utils.round(d.getMinutes()), s = Utils_1.Utils.round(d.getSeconds()), ss = d.getMilliseconds();
+            // colors next-ticket
+            // \x1b[35m%s\x1b[0m
+            args.map(function (value) { return typeof value === "object" ? JSON.stringify(value) : value; });
             Object().stream().of({
                 type: type,
                 name: args.shift(),
                 error: format.apply(null, args),
                 time: d.getTime(),
-                hours: format("\x1b[35m%s:%s:%s\x1b[0m", h, m, s),
+                hours: format("%s:%s:%s", h, m, s),
                 HH: h, mm: m, ss: s, ssss: ss,
                 T: type.substr(0, 1).toUpperCase(),
             }).each(function (value, key) {
-                errorMsg = errorMsg.replace(new RegExp("%" + key), value.toString());
+                // @ts-ignore
+                errorMsg = Utils_1.Utils.regExp(new RegExp("%" + key), errorMsg, function () { return value.toString(); });
             });
-            // merge error line
             if (Logger.saveLog) {
-                Utils_1.Utils.writeLog(Logger.outputLog, format("%s-%s", (new Date()).toLocaleDateString().replace(/\//g, "-"), Logger.oid), errorMsg);
+                var filename_1 = Logger.fileNamePattern;
+                Object().stream().of({
+                    id: Logger.oid,
+                    date: d.toLocaleDateString().replace(/\//g, "-"),
+                    HH: h, mm: m, ss: s, ssss: ss,
+                    reuse: Logger.logfileReuse
+                }).each(function (value, key) {
+                    filename_1 = filename_1.replace(new RegExp("%" + key), value);
+                });
+                if (Logger.fileMaxSize === null || (Logger.fileMaxSize >= 0 && Utils_1.Utils.getFileSize(Logger.outputLog + ("/" + filename_1 + ".log")) <= Logger.fileMaxSize)) {
+                    Utils_1.Utils.writeLog(Logger.outputLog, filename_1, errorMsg);
+                }
             }
             if (Logger.logStdout) {
                 if (Logger.pipeStdout !== null)
                     this.pipeStdout.write(errorMsg);
-                else
-                    console.log(errorMsg);
+                else {
+                    // @ts-ignore
+                    process.stdout.write(errorMsg + "\n");
+                }
             }
         }
     };
@@ -141,11 +172,12 @@ var Logger = /** @class */ (function () {
     /***
      * Basic configuration
      */
-    Logger.parser = "[%hours] %T/%name - %error";
+    Logger.parser = "[%hours] %T/%name - %hours - %error";
     Logger.outputLog = "";
     Logger.saveLog = false;
     Logger.logStdout = true;
     Logger.logLevel = ["ALL"];
+    Logger.colorize = true;
     /**
      * output file
      */
@@ -155,6 +187,9 @@ var Logger = /** @class */ (function () {
      */
     Logger.pipeStdout = null;
     Logger.propertiesConfig = null;
+    Logger.fileNamePattern = "%date-%id";
+    Logger.logfileReuse = null;
+    Logger.fileMaxSize = null;
     return Logger;
 }());
 exports.Logger = Logger;
