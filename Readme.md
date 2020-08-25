@@ -1,6 +1,6 @@
 # logger20js-ts
 
-<img src="https://img.shields.io/badge/Git version-1.0.0-yellowgreen"/> <img src="https://img.shields.io/github/languages/top/devGnode/SeleniumJs"/> <img src="https://img.shields.io/badge/Javascript-ES2020-yellow"/> <img src="https://img.shields.io/npm/v/logger20js-ts"/> <img src="https://img.shields.io/node/v/logger20js-ts"/>
+<img src="https://img.shields.io/badge/Git version-1.0.10-yellowgreen"/> <img src="https://img.shields.io/github/languages/top/devGnode/SeleniumJs"/> <img src="https://img.shields.io/badge/Javascript-ES2020-yellow"/> <img src="https://img.shields.io/npm/v/logger20js-ts"/> <img src="https://img.shields.io/node/v/logger20js-ts"/>
 
 Little basic framework Logger for nodeJs or typescript project.
 
@@ -14,10 +14,10 @@ This framework has been written in typescript.
 $ npm i logger20js-ts
 ``
 
-### Parser
+## Usage
+### Log pattern
 
-
-parser   | utility   
+parser   | output value
 ------------ | -------------    
 type        |  Level type [LOG,ERROR,WARN,INFO,DEBUG,CUSTOM]
 T           | Level type first character [L,E,W,I,D,C]
@@ -27,10 +27,24 @@ hours       | format type &rarr; HH:mm:ss
 HH          | hours number type
 mm          | minutes number type
 ss          | seconds number type
+error       | log message
 
-default parser look like to `%time	%name	 : %type :	%error`.
+default pattern look like to `%time	%name	 : %type :	%error`.
 Another pattern `[%HH:%mm:%ss] %T/%name - %error`.
-  
+ 
+you can define multiple parser in your pattern  `%hours - %error - %hours` 
+
+you can colorize parser like this : `[%hours{blue}] - %type{yellow} - %error`
+
+- black
+- red
+- green
+- yellow
+- blue
+- magenta
+- cyan
+- white
+
 Example :
 
 ```javascript
@@ -43,7 +57,7 @@ class MyClass{
 
     func(){
         MyClass.LOG.log("one example with args %s - %s ", "foo",123); 
-    }    
+    }
 
 }
 ```
@@ -55,9 +69,8 @@ output :
 ````
 
 ```javascript
-const {Logger}     = require("logger20js-ts");
+const {Logger}  = require("logger20js-ts");
 Logger.setParser("[%HH:%mm:%ss] %T/%name - %error");
-
 
 class MyClass{
     
@@ -70,6 +83,8 @@ class MyClass{
 
 }
 ```
+
+output :
 
 ````text
 [22:33:40] L/MyClass - one example with args foo - 123
@@ -86,11 +101,13 @@ class MyClass{
 - ERROR
 - CUSTOM 
 
-You can customize your Stdout logging level with the Logger with `Logger.level` or from your own class properties with the` log Level` property.
+You can customize your Stdout logging level from the static Logger access with `Logger.level( ... )` or from your own properties class make sur you have define` logLevel` property.
 
 ```javascript
 Logger.level(["INFO","WARN"]);
 ````
+
+Only INFO and WARN log will be displayed to the console or recorded.
 
 ### Set path to the log file
 
@@ -99,9 +116,9 @@ Logger.setSaveLog(true);
 Logger.setOutputLog(process.cwd()+"/logs");
 ````
 
-### log file name
+### log filename
 
-parser   | utility   
+parser   | output value   
 ------------ | -------------    
 id           |  uuid hash
 date         | LocalDate format : YYYY-dd-mm
@@ -112,11 +129,11 @@ reuse        | allow reuse of an existing log file
 
 - fileNamePattern : default `%date-%id`
 
-if you want use the `reuse` pattern in your filename, you make sur you have define the re-use file path `Logger.setLogFileReuse`.
-
 ```javascript
 Logger.setLogFilePattern("environment-%date-%id");
 ````
+
+if you want use the `reuse` pattern in your logger filename, make sure you have defined the reuse filename `Logger.set Log File Reuse` without define the extension `.log` in your filename.
 
 ### static access
 
@@ -134,6 +151,8 @@ Logger.setLogFilePattern("environment-%date-%id");
 - setLogFilePattern( pattern : ***String*** ) : void
 - setFileMaxSize( bytes : ***Number*** ) : void
 - setLogFilePattern( path : ***String*** ) : void
+- setLogFileReuse( fileName : ***string*** ) : void
+- setColorize( status : ***boolean*** ) : void
 
 #### create redirect stdout message parsed
 
@@ -166,14 +185,15 @@ properties keys accepted :
 - logFileNamePattern : ***String*** default `%date-%id`
 - logFileMaxSize  : ***number*** default `null`
 - logFileReusePath : ***string*** default `null`
-            
+- logEnabledColorize : ***boolean*** default `true`
+         
 ```javascript
 const {Logger}     = require("logger20js-ts");
 
 class PropertiesConfig{
     
     getProperty( key , defaultValue ){
-        if( ... ){
+        if( /*...*/ ){
             // ....
         }
         return defaultValue;
