@@ -164,13 +164,17 @@ export class Logger{
                 time : d.getTime(),
                 hours: format("%s:%s:%s",h,m,s),
                 HH:h, mm: m, ss: s, ssss: ss,
-                T: type.substr(0,1).toUpperCase(),
-               error: format.apply(null,args),
+                T: type.substr(0,1).toUpperCase()
             }).each((value,key)=>{
                 // @ts-ignore
                errorMsg = Utils.regExp(new RegExp(`\%${key}`),errorMsg,()=>value.toString());
             });
 
+            /***
+             * replace message log here avoid
+             * regexp fall in inifinite loop
+             */
+            errorMsg = errorMsg.replace(/\%error/,format.apply(null,args));
            if(Logger.saveLog){
                let filename = Logger.fileNamePattern;
                Object().stream().of({

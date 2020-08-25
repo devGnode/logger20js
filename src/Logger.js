@@ -144,12 +144,16 @@ var Logger = /** @class */ (function () {
                 time: d.getTime(),
                 hours: format("%s:%s:%s", h, m, s),
                 HH: h, mm: m, ss: s, ssss: ss,
-                T: type.substr(0, 1).toUpperCase(),
-                error: format.apply(null, args),
+                T: type.substr(0, 1).toUpperCase()
             }).each(function (value, key) {
                 // @ts-ignore
                 errorMsg = Utils_1.Utils.regExp(new RegExp("%" + key), errorMsg, function () { return value.toString(); });
             });
+            /***
+             * replace message log here avoid
+             * regexp fall in inifinite loop
+             */
+            errorMsg = errorMsg.replace(/\%error/, format.apply(null, args));
             if (Logger.saveLog) {
                 var filename_1 = Logger.fileNamePattern;
                 Object().stream().of({
