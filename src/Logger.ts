@@ -153,9 +153,21 @@ export class Logger{
            args.map(value=>typeof value==="object"?JSON.stringify(value):value);
 
             if( Logger.colorize )
-            // @ts-ignore
-            errorMsg = Utils.regExp(/(\%[a-zA-z]+)\{([a-z]+)\}/,errorMsg,function(find){
-               return format("\x1b[%sm%s\x1b[0m",Logger.translateColorToInt(this[2]),this[1]);
+                // @ts-ignore
+                errorMsg = Utils.regExp(/(\%[a-zA-z]+)\{([a-z]+|((([lewidc]+)\?[a-z]+?\;*)+?(\:[a-z]+)*)+)\}/,errorMsg,function(find){
+                let define=null,interupt=null, _t=type.substring(0,1).toLowerCase();
+
+                if(this[1]==="%type"||this[1]==="%T"&&this[3]!==undefined){
+                    // try to define color
+                   Utils.regExp(/([lewidc]{1})\?([a-z]+)?\;*/,this[2],function(){
+                        if(_t===this[1])define = Logger.translateColorToInt(this[2]);
+                   });
+                   // default color
+                   if(define===null&&this[6]!==undefined)define=Logger.translateColorToInt(this[6].replace(/^\:/,""));
+                   // return %parser without any color
+                   else if(define===null&&this[6]===undefined) interupt=this[1];
+                }
+               return (interupt || format("\x1b[%sm%s\x1b[0m",define||Logger.translateColorToInt(this[2]),this[1]));
            });
 
            Object().stream().of( {

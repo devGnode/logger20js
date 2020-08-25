@@ -45,6 +45,16 @@ you can colorize parser like this : `[%hours{blue}] - %type{yellow} - %error`
 - cyan
 - white
 
+:warning: only for `%T` and `%type` parser you can customize the output color for the type value like [L,E,W,I,D,C] :
+
+`%T{w?yellow;e?red}` or `%type{w?yellow;e?red}`
+
+default color for other logger `:colorName`
+
+`%T{w?yellow;e?red:green}` 
+
+another example : `%T{e?red;w?yellow;d?blue;l?blue:black}`
+
 Example :
 
 ```javascript
