@@ -9,12 +9,12 @@ export class Logger{
     /***
      * Basic configuration
      */
-    private static parser    : String   = "[%hours] %T/%name - %hours - %error";
+    private static parser    : String   = "%time\t%name\t: %type :\t%error";
     private static outputLog : string   = "";
     private static saveLog   : boolean  = false;
     private static logStdout : boolean  = true;
     private static logLevel  : String[] = ["ALL"];
-    private static colorize : boolean = true;
+    private static colorize : boolean   = true;
 
     /**
      * output file
@@ -52,6 +52,7 @@ export class Logger{
             Logger.fileNamePattern = Logger.propertiesConfig.getProperty("logFileNamePattern","%date-%id");
             Logger.fileMaxSize     = Logger.propertiesConfig.getProperty("logFileMaxSize",null);
             Logger.logfileReuse    = Logger.propertiesConfig.getProperty("logFileReusePath",null);
+            Logger.colorize        = Logger.propertiesConfig.getProperty("logEnabledColorize", true );
         }
 
         this.name = name;
@@ -124,6 +125,15 @@ export class Logger{
         Logger.pipeStdout = pipe;
     }
 
+    public static setColorize( status : boolean ) : void {
+        Logger.colorize = status;
+    }
+
+    private static translateColorToInt( color : string = "black" ){
+       let colors = [,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,'black','red','green','yellow','blue','magenta','cyan','white',,,];
+       return colors.indexOf(color)>-1?colors.indexOf(color):"30";
+    }
+
     /***
      * @param type, errorMsg [, Object .... ]
      */
@@ -139,9 +149,15 @@ export class Logger{
                s = Utils.round(d.getSeconds()),
                ss= d.getMilliseconds() ;
 
-           // colors next-ticket
-           // \x1b[35m%s\x1b[0m
+           // cast Object to String
            args.map(value=>typeof value==="object"?JSON.stringify(value):value);
+
+            if( Logger.colorize )
+            // @ts-ignore
+            errorMsg = Utils.regExp(/(\%[a-zA-z]+)\{([a-z]+)\}/,errorMsg,function(find){
+               return format("\x1b[%sm%s\x1b[0m",Logger.translateColorToInt(this[2]),this[1]);
+           });
+
            Object().stream().of( {
                 type : type,
                 name : args.shift(),

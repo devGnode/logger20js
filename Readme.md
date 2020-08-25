@@ -15,7 +15,7 @@ $ npm i logger20js-ts
 ``
 
 ## Usage
-### Pattern
+### Log pattern
 
 parser   | output value
 ------------ | -------------    
@@ -31,7 +31,20 @@ error       | log message
 
 default pattern look like to `%time	%name	 : %type :	%error`.
 Another pattern `[%HH:%mm:%ss] %T/%name - %error`.
-  
+ 
+you can define multiple parser in your pattern  `%hours - %error - %hours` 
+
+you can colorize parser like this : `[%hours{blue}] - %type{yellow} - %error`
+
+- black
+- red
+- green
+- yellow
+- blue
+- magenta
+- cyan
+- white
+
 Example :
 
 ```javascript
@@ -71,6 +84,8 @@ class MyClass{
 }
 ```
 
+output :
+
 ````text
 [22:33:40] L/MyClass - one example with args foo - 123
 [22:33:40] W/MyClass - second example with args foo - 123
@@ -86,7 +101,7 @@ class MyClass{
 - ERROR
 - CUSTOM 
 
-You can customize your Stdout logging level with the Logger with `Logger.level` or from your own class properties with the` log Level` property.
+You can customize your Stdout logging level from the static Logger access with `Logger.level( ... )` or from your own properties class make sur you have define` logLevel` property.
 
 ```javascript
 Logger.level(["INFO","WARN"]);
@@ -103,7 +118,7 @@ Logger.setOutputLog(process.cwd()+"/logs");
 
 ### log filename
 
-parser   | utility   
+parser   | output value   
 ------------ | -------------    
 id           |  uuid hash
 date         | LocalDate format : YYYY-dd-mm
@@ -118,7 +133,7 @@ reuse        | allow reuse of an existing log file
 Logger.setLogFilePattern("environment-%date-%id");
 ````
 
-if you want use the `reuse` pattern in your logger filename, you make sure you have defined the reuse filename path `Logger.set Log File Reuse` without define the extension `.log` of the filename.
+if you want use the `reuse` pattern in your logger filename, make sure you have defined the reuse filename `Logger.set Log File Reuse` without define the extension `.log` in your filename.
 
 ### static access
 
@@ -137,6 +152,7 @@ if you want use the `reuse` pattern in your logger filename, you make sure you h
 - setFileMaxSize( bytes : ***Number*** ) : void
 - setLogFilePattern( path : ***String*** ) : void
 - setLogFileReuse( fileName : ***string*** ) : void
+- setColorize( status : ***boolean*** ) : void
 
 #### create redirect stdout message parsed
 
@@ -169,7 +185,8 @@ properties keys accepted :
 - logFileNamePattern : ***String*** default `%date-%id`
 - logFileMaxSize  : ***number*** default `null`
 - logFileReusePath : ***string*** default `null`
-            
+- logEnabledColorize : ***boolean*** default `true`
+         
 ```javascript
 const {Logger}     = require("logger20js-ts");
 

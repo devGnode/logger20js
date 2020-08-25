@@ -41,6 +41,8 @@ export declare class Logger {
     static setFileMaxSize(bytes?: number): void;
     static setLogFileReuse(path?: String): void;
     static setPipeStdout(pipe?: any): void;
+    static setColorize(status: boolean): void;
+    private static translateColorToInt;
     /***
      * @param type, errorMsg [, Object .... ]
      */

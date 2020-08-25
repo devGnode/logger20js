@@ -27,6 +27,7 @@ var Logger = /** @class */ (function () {
             Logger.fileNamePattern = Logger.propertiesConfig.getProperty("logFileNamePattern", "%date-%id");
             Logger.fileMaxSize = Logger.propertiesConfig.getProperty("logFileMaxSize", null);
             Logger.logfileReuse = Logger.propertiesConfig.getProperty("logFileReusePath", null);
+            Logger.colorize = Logger.propertiesConfig.getProperty("logEnabledColorize", true);
         }
         this.name = name;
     }
@@ -115,6 +116,14 @@ var Logger = /** @class */ (function () {
         if (pipe === void 0) { pipe = null; }
         Logger.pipeStdout = pipe;
     };
+    Logger.setColorize = function (status) {
+        Logger.colorize = status;
+    };
+    Logger.translateColorToInt = function (color) {
+        if (color === void 0) { color = "black"; }
+        var colors = [, , , , , , , , , , , , , , , , , , , , , , , , , , , , , , 'black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white', , ,];
+        return colors.indexOf(color) > -1 ? colors.indexOf(color) : "30";
+    };
     /***
      * @param type, errorMsg [, Object .... ]
      */
@@ -122,9 +131,13 @@ var Logger = /** @class */ (function () {
         var args = Array.from(arguments), type = args.shift().toUpperCase(), errorMsg = Logger.parser;
         if (Logger.logLevel.indexOf(type.toUpperCase()) > -1 || Logger.logLevel.indexOf("ALL") > -1) {
             var d = new Date(), h = Utils_1.Utils.round(d.getHours()), m = Utils_1.Utils.round(d.getMinutes()), s = Utils_1.Utils.round(d.getSeconds()), ss = d.getMilliseconds();
-            // colors next-ticket
-            // \x1b[35m%s\x1b[0m
+            // cast Object to String
             args.map(function (value) { return typeof value === "object" ? JSON.stringify(value) : value; });
+            if (Logger.colorize)
+                // @ts-ignore
+                errorMsg = Utils_1.Utils.regExp(/(\%[a-zA-z]+)\{([a-z]+)\}/, errorMsg, function (find) {
+                    return format("\x1b[%sm%s\x1b[0m", Logger.translateColorToInt(this[2]), this[1]);
+                });
             Object().stream().of({
                 type: type,
                 name: args.shift(),
@@ -177,7 +190,7 @@ var Logger = /** @class */ (function () {
     /***
      * Basic configuration
      */
-    Logger.parser = "[%hours] %T/%name - %hours - %error";
+    Logger.parser = "%time\t%name\t: %type :\t%error";
     Logger.outputLog = "";
     Logger.saveLog = false;
     Logger.logStdout = true;
