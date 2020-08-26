@@ -1,4 +1,7 @@
+import './lib/StringExtends';
 export declare class Logger {
+    static readonly DEFAULT_LOG_PATTERN_MONO = "%time\t%name\t: %type :\t%error";
+    static readonly WEBDRIVER_LOG_PATTERN_COLORED = "[%hours{cyan}] %T{w?yellow}/%name - %error";
     /***
      * Basic configuration
      */
@@ -41,7 +44,7 @@ export declare class Logger {
     static setFileMaxSize(bytes?: number): void;
     static setLogFileReuse(path?: String): void;
     static setPipeStdout(pipe?: any): void;
-    static setColorize(status: boolean): void;
+    static setColorize(status?: boolean): void;
     private static translateColorToInt;
     /***
      * @param type, errorMsg [, Object .... ]

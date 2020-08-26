@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Logger = void 0;
 var uuid_1 = require("uuid");
 var Utils_1 = require("./Utils");
+require("./lib/StringExtends");
 var format = require("util").format;
 var Stream = require("./lib/Stream.js").Stream;
 var Logger = /** @class */ (function () {
@@ -93,11 +94,11 @@ var Logger = /** @class */ (function () {
         Logger.logStdout = stdout;
     };
     Logger.setParser = function (parsing) {
-        if (parsing === void 0) { parsing = Logger.parser; }
+        if (parsing === void 0) { parsing = Logger.DEFAULT_LOG_PATTERN_MONO; }
         Logger.parser = parsing;
     };
     Logger.level = function (level) {
-        if (level === void 0) { level = []; }
+        if (level === void 0) { level = ["ALL"]; }
         Logger.logLevel = level;
     };
     Logger.setLogFilePattern = function (pattern) {
@@ -117,12 +118,13 @@ var Logger = /** @class */ (function () {
         Logger.pipeStdout = pipe;
     };
     Logger.setColorize = function (status) {
+        if (status === void 0) { status = true; }
         Logger.colorize = status;
     };
     Logger.translateColorToInt = function (color) {
         if (color === void 0) { color = "black"; }
         var colors = [, , , , , , , , , , , , , , , , , , , , , , , , , , , , , , 'black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white', , ,];
-        return colors.indexOf(color) > -1 ? colors.indexOf(color) : "30";
+        return colors.indexOf(color) > -1 ? new String(colors.indexOf(color)).toString() : "30";
     };
     /***
      * @param type, errorMsg [, Object .... ]
@@ -132,25 +134,27 @@ var Logger = /** @class */ (function () {
         if (Logger.logLevel.indexOf(type.toUpperCase()) > -1 || Logger.logLevel.indexOf("ALL") > -1) {
             var d = new Date(), h = Utils_1.Utils.round(d.getHours()), m = Utils_1.Utils.round(d.getMinutes()), s = Utils_1.Utils.round(d.getSeconds()), ss = d.getMilliseconds();
             // cast Object to String
-            args.map(function (value) { return typeof value === "object" ? JSON.stringify(value) : value; });
-            if (Logger.colorize)
-                // @ts-ignore
-                errorMsg = Utils_1.Utils.regExp(/(\%[a-zA-z]+)\{([a-z]+|((([lewidc]+)\?[a-z]+?\;*)+?(\:[a-z]+)*)+)\}/, errorMsg, function (find) {
-                    var define = null, interupt = null, _t = type.substring(0, 1).toLowerCase();
-                    if (this[1] === "%type" || this[1] === "%T" && this[3] !== undefined) {
-                        Utils_1.Utils.regExp(/([lewidc]{1})\?([a-z]+)?\;*/, this[2], function () {
-                            if (_t === this[1])
-                                define = Logger.translateColorToInt(this[2]);
-                        });
-                        // default color
-                        if (define === null && this[6] !== undefined)
-                            define = Logger.translateColorToInt(this[6].replace(/\:/, ""));
-                        // return %parser without any color
-                        else if (define === null && this[6] === undefined)
-                            interupt = this[1];
-                    }
-                    return (interupt || format("\x1b[%sm%s\x1b[0m", define || Logger.translateColorToInt(this[2]), this[1]));
-                });
+            args.map(function (value) { return (typeof value).equals("object") ? JSON.stringify(value) : value; });
+            // @ts-ignore
+            errorMsg = errorMsg.regExp(/(\%[a-zA-z]+)\{([a-z]+|((([lewidc]+)\?[a-z]+?\;*)+?(\:[a-z]+)*)+)\}/, function () {
+                var define = null, interupt = null, _t = type.substring(0, 1).toLowerCase();
+                if (!Logger.colorize)
+                    return this[1];
+                if (this[1].equals("%type") || this[1].equals("%T") && this[3] !== undefined) {
+                    // try to define color
+                    this[2].regExp(/([lewidc]{1})\?([a-z]+)?\;*/, function () {
+                        if (_t.equals(this[1]))
+                            define = Logger.translateColorToInt(this[2]);
+                    });
+                    // default color
+                    if (define === null && this[6] !== undefined)
+                        define = Logger.translateColorToInt(this[6].replace(/^\:/, ""));
+                    // return %parser without any color
+                    else if (define === null && this[6] === undefined)
+                        interupt = this[1];
+                }
+                return (interupt || format("\x1b[%sm%s\x1b[0m", define || Logger.translateColorToInt(this[2]), this[1]));
+            });
             Object().stream().of({
                 type: type,
                 name: args.shift(),
@@ -204,10 +208,12 @@ var Logger = /** @class */ (function () {
         if (name === void 0) { name = undefined; }
         return new Logger(name);
     };
+    Logger.DEFAULT_LOG_PATTERN_MONO = "%time\t%name\t: %type :\t%error";
+    Logger.WEBDRIVER_LOG_PATTERN_COLORED = "[%hours{cyan}] %T{w?yellow}/%name - %error";
     /***
      * Basic configuration
      */
-    Logger.parser = "%time\t%name\t: %type :\t%error";
+    Logger.parser = Logger.DEFAULT_LOG_PATTERN_MONO;
     Logger.outputLog = "";
     Logger.saveLog = false;
     Logger.logStdout = true;

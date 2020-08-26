@@ -1,8 +1,8 @@
 {
   "name": "logger20js-ts",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "author": "Maroder - <devgnode@gmail.com>",
-  "description": "logger for nodejs",
+  "description": "logger for nodejs and typescript - logger20js-ts",
   "main": "bin/Logger20js.js",
   "bin": {
     "logger20js": "./bin/Logger20js.js"
@@ -18,7 +18,7 @@
   "engines": {
     "node": ">= 12.14.1"
   },
-  "license": "ISC",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@types/node": "^14.0.27",
     "@types/uuid": "^8.3.0",
@@ -27,5 +27,11 @@
   },
   "dependencies": {
     "uuid": "^8.3.0"
-  }
+  },
+  "keywords": [
+    "logger20js-ts",
+    "logger",
+    "console",
+    "stdout"
+  ]
 }
