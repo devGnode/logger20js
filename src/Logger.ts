@@ -1,15 +1,19 @@
 import {v4} from 'uuid';
 import {Utils} from "./Utils";
+import './lib/StringExtends';
 
 const {format} = require("util");
 const {Stream} = require("./lib/Stream.js");
 
 export class Logger{
 
+    public static readonly DEFAULT_LOG_PATTERN_MONO         = "%time\t%name\t: %type :\t%error";
+    public static readonly WEBDRIVER_LOG_PATTERN_COLORED    = "[%hours{cyan}] %T{w?yellow}/%name - %error";
+
     /***
      * Basic configuration
      */
-    private static parser    : String   = "%time\t%name\t: %type :\t%error";
+    private static parser    : String   = Logger.DEFAULT_LOG_PATTERN_MONO;
     private static outputLog : string   = "";
     private static saveLog   : boolean  = false;
     private static logStdout : boolean  = true;
@@ -101,11 +105,11 @@ export class Logger{
         Logger.logStdout = stdout;
     }
 
-    public static setParser( parsing : String = Logger.parser ) : void {
+    public static setParser( parsing : String = Logger.DEFAULT_LOG_PATTERN_MONO ) : void {
         Logger.parser = parsing;
     }
 
-    public static level( level : String[] = [] ) : void {
+    public static level( level : String[] = ["ALL"] ) : void {
         Logger.logLevel = level;
     }
 
@@ -125,13 +129,13 @@ export class Logger{
         Logger.pipeStdout = pipe;
     }
 
-    public static setColorize( status : boolean ) : void {
+    public static setColorize( status : boolean = true ) : void {
         Logger.colorize = status;
     }
 
-    private static translateColorToInt( color : string = "black" ){
+    private static translateColorToInt( color : string = "black" ) : String {
        let colors = [,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,'black','red','green','yellow','blue','magenta','cyan','white',,,];
-       return colors.indexOf(color)>-1?colors.indexOf(color):"30";
+       return colors.indexOf(color)>-1?new String(colors.indexOf(color)).toString():"30";
     }
 
     /***
@@ -150,17 +154,16 @@ export class Logger{
                ss= d.getMilliseconds() ;
 
            // cast Object to String
-           args.map(value=>typeof value==="object"?JSON.stringify(value):value);
-
-            if( Logger.colorize )
-                // @ts-ignore
-                errorMsg = Utils.regExp(/(\%[a-zA-z]+)\{([a-z]+|((([lewidc]+)\?[a-z]+?\;*)+?(\:[a-z]+)*)+)\}/,errorMsg,function(find){
+           args.map(value=>(typeof value).equals("object")?JSON.stringify(value):value);
+           // @ts-ignore
+           errorMsg = errorMsg.regExp(/(\%[a-zA-z]+)\{([a-z]+|((([lewidc]+)\?[a-z]+?\;*)+?(\:[a-z]+)*)+)\}/,function(){
                 let define=null,interupt=null, _t=type.substring(0,1).toLowerCase();
 
-                if(this[1]==="%type"||this[1]==="%T"&&this[3]!==undefined){
+                if(!Logger.colorize) return this[1];
+                if(this[1].equals("%type")||this[1].equals("%T")&&this[3]!==undefined){
                     // try to define color
-                   Utils.regExp(/([lewidc]{1})\?([a-z]+)?\;*/,this[2],function(){
-                        if(_t===this[1])define = Logger.translateColorToInt(this[2]);
+                    this[2].regExp(/([lewidc]{1})\?([a-z]+)?\;*/,function(){
+                        if(_t.equals(this[1]))define = Logger.translateColorToInt(this[2]);
                    });
                    // default color
                    if(define===null&&this[6]!==undefined)define=Logger.translateColorToInt(this[6].replace(/^\:/,""));
