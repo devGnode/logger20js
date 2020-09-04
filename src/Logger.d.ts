@@ -1,7 +1,10 @@
 import './lib/StringExtends';
+declare type filterLogLevel<T> = String[] | [...T[]];
+declare type strLogLevel = "ALL" | "LOG" | "DEBUG" | "ERROR" | "INFO" | "CUSTOM";
 export declare class Logger {
     static readonly DEFAULT_LOG_PATTERN_MONO = "%time\t%name\t: %type :\t%error";
     static readonly WEBDRIVER_LOG_PATTERN_COLORED = "[%hours{cyan}] %T{w?yellow}/%name - %error";
+    private static readonly COLORS_REGEXP;
     /***
      * Basic configuration
      */
@@ -27,6 +30,7 @@ export declare class Logger {
      * others
      */
     private name;
+    private pattern;
     constructor(name?: String);
     warn(...args: any): void;
     log(...args: any): void;
@@ -34,16 +38,17 @@ export declare class Logger {
     debug(...args: any): void;
     error(...args: any): void;
     custom(...args: any): void;
+    setPattern(pattern?: String): Logger;
     static setPropertiesConfigHandle(handle?: any): void;
     static setOutputLog(path?: string): void;
     static setSaveLog(save?: boolean): void;
     static setLogStdout(stdout?: boolean): void;
     static setParser(parsing?: String): void;
-    static level(level?: String[]): void;
+    static level(level?: filterLogLevel<strLogLevel>): void;
     static setLogFilePattern(pattern?: String): void;
     static setFileMaxSize(bytes?: number): void;
     static setLogFileReuse(path?: String): void;
-    static setPipeStdout(pipe?: any): void;
+    static setPipeStdout(pipe?: Function | CallableFunction): void;
     static setColorize(status?: boolean): void;
     private static translateColorToInt;
     /***
@@ -56,3 +61,4 @@ export declare class Logger {
      */
     static factory(name?: String): Logger;
 }
+export {};

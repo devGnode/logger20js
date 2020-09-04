@@ -13,7 +13,8 @@
   },
   "scripts": {
     "test": "ts-node Test.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "another" : "ts-node utils.ts"
   },
   "engines": {
     "node": ">= 12.14.1"
