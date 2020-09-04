@@ -224,10 +224,14 @@ Stream.of = Stream.out.prototype.of = function(object){
 
 // disabled this extend
 //extends Stream to oject & Array prototype
-Object.prototype.stream = Array.prototype.stream = function(){
+//////////////////////////////////////////////////////////////////
+// WARNING
+// DEFECT
+///////////////////////////////////////////////////////////////////
+/*Object.prototype.stream = Array.prototype.stream = function(){
     return Stream(this);
-};
-
+};*/
+/////////////////////////////////////////////////////////////////////
 /***
  *
  * @exports

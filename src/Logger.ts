@@ -5,10 +5,15 @@ import './lib/StringExtends';
 const {format} = require("util");
 const {Stream} = require("./lib/Stream.js");
 
+type filterLogLevel<T> = String[] | [ ... T[] ]
+type strLogLevel = "ALL" |"LOG" | "DEBUG" | "ERROR" | "INFO" | "CUSTOM"
+
 export class Logger{
 
     public static readonly DEFAULT_LOG_PATTERN_MONO         = "%time\t%name\t: %type :\t%error";
     public static readonly WEBDRIVER_LOG_PATTERN_COLORED    = "[%hours{cyan}] %T{w?yellow}/%name - %error";
+
+    private static readonly COLORS_REGEXP = /(\%[a-zA-z]+)\{([a-z]+|((([lewidc]+)\?[a-z]+?\;*)+?(\:[a-z]+)*)+)\}/;
 
     /***
      * Basic configuration
@@ -17,7 +22,7 @@ export class Logger{
     private static outputLog : string   = "";
     private static saveLog   : boolean  = false;
     private static logStdout : boolean  = true;
-    private static logLevel  : String[] = ["ALL"];
+    private static logLevel  : filterLogLevel<strLogLevel> = ["ALL"];
     private static colorize : boolean   = true;
 
     /**
@@ -28,8 +33,9 @@ export class Logger{
     /***
      * handles
      */
-    private static pipeStdout : any         = null;
-    private static propertiesConfig : any   = null;
+    private static pipeStdout :  InstanceType<any>      = null;
+    private static propertiesConfig : InstanceType<any> = null;
+
     private static fileNamePattern : String = "%date-%id";
     private static logfileReuse : String    = null;
     private static fileMaxSize  : number    = null;
@@ -38,6 +44,7 @@ export class Logger{
      * others
      */
     private name : String           = null;
+    private pattern : String        = null;
 
     constructor( name : String = undefined ) {
 
@@ -63,30 +70,35 @@ export class Logger{
     }
 
     public warn( ... args : any ) : void {
-        Logger.stdout.apply(null,["warn",this.name].concat(Array.from(arguments)));
+        Logger.stdout.apply(null,["warn",this.pattern,this.name].concat(Array.from(arguments)));
     }
 
     public log( ... args : any ) : void {
-        Logger.stdout.apply(null,["log",this.name].concat(Array.from(arguments)));
+        Logger.stdout.apply(null,["log",this.pattern,this.name].concat(Array.from(arguments)));
     }
 
     public info( ... args : any ) : void {
-        Logger.stdout.apply(null,["info",this.name].concat(Array.from(arguments)));
+        Logger.stdout.apply(null,["info",this.pattern,this.name].concat(Array.from(arguments)));
     }
 
     public debug( ... args : any ) : void {
-        Logger.stdout.apply(null,["debug",this.name].concat(Array.from(arguments)));
+        Logger.stdout.apply(null,["debug",this.pattern,this.name].concat(Array.from(arguments)));
     }
 
     public error( ... args : any ) : void {
-        Logger.stdout.apply(null,["error",this.name].concat(Array.from(arguments)));
+        Logger.stdout.apply(null,["error",this.pattern,this.name].concat(Array.from(arguments)));
     }
 
     public custom( ... args : any ) : void {
         let tmp = Logger.parser;
         Logger.parser = Logger.parser.replace(/\%error/g,"\r\n%error");
-        Logger.stdout.apply(null,["custom",this.name].concat(Array.from(arguments)));
+        Logger.stdout.apply(null,["custom",this.pattern,this.name].concat(Array.from(arguments)));
         Logger.parser = tmp;
+    }
+
+    public setPattern( pattern : String = "" ) : Logger{
+        this.pattern = pattern;
+        return this;
     }
 
     public static setPropertiesConfigHandle( handle : any = null ){
@@ -109,7 +121,7 @@ export class Logger{
         Logger.parser = parsing;
     }
 
-    public static level( level : String[] = ["ALL"] ) : void {
+    public static level( level : filterLogLevel<strLogLevel> = ["ALL"] ) : void {
         Logger.logLevel = level;
     }
 
@@ -125,7 +137,7 @@ export class Logger{
         Logger.logfileReuse = path;
     }
 
-    public static setPipeStdout( pipe : any = null ) : void {
+    public static setPipeStdout( pipe : Function | CallableFunction = null ) : void {
         Logger.pipeStdout = pipe;
     }
 
@@ -134,7 +146,8 @@ export class Logger{
     }
 
     private static translateColorToInt( color : string = "black" ) : String {
-       let colors = [,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,'black','red','green','yellow','blue','magenta','cyan','white',,,];
+       let colors = [,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+                    'black','red','green','yellow','blue','magenta','cyan','white','gray','grey','bblack','bred','bgreen'];
        return colors.indexOf(color)>-1?new String(colors.indexOf(color)).toString():"30";
     }
 
@@ -142,9 +155,9 @@ export class Logger{
      * @param type, errorMsg [, Object .... ]
      */
     private static stdout( ) : void {
-        let args = Array.from(arguments),
+        let args     = Array.from(arguments),
             type     = args.shift().toUpperCase(),
-            errorMsg = Logger.parser;
+            errorMsg =  args.shift() || Logger.parser;
 
         if( Logger.logLevel.indexOf(type.toUpperCase())>-1||Logger.logLevel.indexOf("ALL")>-1) {
            let d = new Date(),
@@ -156,8 +169,8 @@ export class Logger{
            // cast Object to String
            args.map(value=>(typeof value).equals("object")?JSON.stringify(value):value);
            // @ts-ignore
-           errorMsg = errorMsg.regExp(/(\%[a-zA-z]+)\{([a-z]+|((([lewidc]+)\?[a-z]+?\;*)+?(\:[a-z]+)*)+)\}/,function(){
-                let define=null,interupt=null, _t=type.substring(0,1).toLowerCase();
+           errorMsg = errorMsg.regExp(Logger.COLORS_REGEXP,function(){
+                let define=null,interrupt=null, _t=type.substring(0,1).toLowerCase();
 
                 if(!Logger.colorize) return this[1];
                 if(this[1].equals("%type")||this[1].equals("%T")&&this[3]!==undefined){
@@ -168,17 +181,17 @@ export class Logger{
                    // default color
                    if(define===null&&this[6]!==undefined)define=Logger.translateColorToInt(this[6].replace(/^\:/,""));
                    // return %parser without any color
-                   else if(define===null&&this[6]===undefined) interupt=this[1];
+                   else if(define===null&&this[6]===undefined) interrupt=this[1];
                 }
-               return (interupt || format("\x1b[%sm%s\x1b[0m",define||Logger.translateColorToInt(this[2]),this[1]));
+               return (interrupt || format("\x1b[%sm%s\x1b[0m",define||Logger.translateColorToInt(this[2]),this[1]));
            });
 
-           Object().stream().of( {
+           Stream.of( {
                 type : type,
                 name : args.shift(),
                 time : d.getTime(),
                 hours: format("%s:%s:%s",h,m,s),
-                HH:h, mm: m, ss: s, ssss: ss,
+                ms: ss, HH:h, mm: m, ss: s,
                 T: type.substr(0,1).toUpperCase()
             }).each((value,key)=>{
                 // @ts-ignore
@@ -189,33 +202,34 @@ export class Logger{
              * replace message log here avoid
              * regexp fall in inifinite loop
              */
-            errorMsg = errorMsg.replace(/\%error/,format.apply(null,args));
+            errorMsg = errorMsg.replace(/\%error|\%message/gi,format.apply(null,args));
            if(Logger.saveLog){
                let filename = Logger.fileNamePattern;
-               Object().stream().of({
+               Stream.of({
                    id : Logger.oid,
                    date : d.toLocaleDateString( ).replace(/\//g,"-"),
-                   HH:h, mm: m, ss: s, ssss: ss,
+                   ms: ss, HH:h, mm: m, ss: s,
                    reuse: Logger.logfileReuse
                }).each((value,key)=>{
                    filename = filename.replace(new RegExp(`\%${key}`),value);
                });
 
-               if( Logger.fileMaxSize===null || ( Logger.fileMaxSize>=0 && Utils.getFileSize(Logger.outputLog+`/${filename}.log`) <= Logger.fileMaxSize )){
+               if(
+                   Logger.fileMaxSize===null || ( Logger.fileMaxSize>=0 &&
+                   Utils.getFileSize(Logger.outputLog+`/${filename}.log`) <= Logger.fileMaxSize )
+               ){
                    try {
-                       Utils.writeLog(
-                           Logger.outputLog,
-                           filename,
-                           errorMsg
-                       );
+                       Utils.writeLog(Logger.outputLog, filename, errorMsg);
                    }catch (e) {
                        console.warn(e);
                    }
                }
            }
             if(Logger.logStdout) {
-                if(Logger.pipeStdout!==null) this.pipeStdout.write(errorMsg); else {
+                if(Logger.pipeStdout!==null) this.pipeStdout.write.call(null,errorMsg); else {
                     // @ts-ignore
+                    process.stdout.clearLine(0);
+                    process.stdout.cursorTo(0);
                     process.stdout.write(errorMsg+"\n");
                 }
             }

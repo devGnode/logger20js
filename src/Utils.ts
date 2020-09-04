@@ -1,4 +1,6 @@
-import {futimes, mkdirSync, statSync, writeFileSync} from "fs";
+"use strict";
+
+import {mkdirSync, statSync, writeFileSync} from "fs";
 
 export class Utils{
 

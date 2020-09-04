@@ -13,6 +13,7 @@ var Logger = /** @class */ (function () {
          * others
          */
         this.name = null;
+        this.pattern = null;
         /***
          * Rewrite Logger configuration
          * getProperty :
@@ -37,35 +38,35 @@ var Logger = /** @class */ (function () {
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        Logger.stdout.apply(null, ["warn", this.name].concat(Array.from(arguments)));
+        Logger.stdout.apply(null, ["warn", this.pattern, this.name].concat(Array.from(arguments)));
     };
     Logger.prototype.log = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        Logger.stdout.apply(null, ["log", this.name].concat(Array.from(arguments)));
+        Logger.stdout.apply(null, ["log", this.pattern, this.name].concat(Array.from(arguments)));
     };
     Logger.prototype.info = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        Logger.stdout.apply(null, ["info", this.name].concat(Array.from(arguments)));
+        Logger.stdout.apply(null, ["info", this.pattern, this.name].concat(Array.from(arguments)));
     };
     Logger.prototype.debug = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        Logger.stdout.apply(null, ["debug", this.name].concat(Array.from(arguments)));
+        Logger.stdout.apply(null, ["debug", this.pattern, this.name].concat(Array.from(arguments)));
     };
     Logger.prototype.error = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        Logger.stdout.apply(null, ["error", this.name].concat(Array.from(arguments)));
+        Logger.stdout.apply(null, ["error", this.pattern, this.name].concat(Array.from(arguments)));
     };
     Logger.prototype.custom = function () {
         var args = [];
@@ -74,8 +75,13 @@ var Logger = /** @class */ (function () {
         }
         var tmp = Logger.parser;
         Logger.parser = Logger.parser.replace(/\%error/g, "\r\n%error");
-        Logger.stdout.apply(null, ["custom", this.name].concat(Array.from(arguments)));
+        Logger.stdout.apply(null, ["custom", this.pattern, this.name].concat(Array.from(arguments)));
         Logger.parser = tmp;
+    };
+    Logger.prototype.setPattern = function (pattern) {
+        if (pattern === void 0) { pattern = ""; }
+        this.pattern = pattern;
+        return this;
     };
     Logger.setPropertiesConfigHandle = function (handle) {
         if (handle === void 0) { handle = null; }
@@ -123,21 +129,22 @@ var Logger = /** @class */ (function () {
     };
     Logger.translateColorToInt = function (color) {
         if (color === void 0) { color = "black"; }
-        var colors = [, , , , , , , , , , , , , , , , , , , , , , , , , , , , , , 'black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white', , ,];
+        var colors = [, , , , , , , , , , , , , , , , , , , , , , , , , , , , , ,
+            'black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white', 'gray', 'grey', 'bblack', 'bred', 'bgreen'];
         return colors.indexOf(color) > -1 ? new String(colors.indexOf(color)).toString() : "30";
     };
     /***
      * @param type, errorMsg [, Object .... ]
      */
     Logger.stdout = function () {
-        var args = Array.from(arguments), type = args.shift().toUpperCase(), errorMsg = Logger.parser;
+        var args = Array.from(arguments), type = args.shift().toUpperCase(), errorMsg = args.shift() || Logger.parser;
         if (Logger.logLevel.indexOf(type.toUpperCase()) > -1 || Logger.logLevel.indexOf("ALL") > -1) {
             var d = new Date(), h = Utils_1.Utils.round(d.getHours()), m = Utils_1.Utils.round(d.getMinutes()), s = Utils_1.Utils.round(d.getSeconds()), ss = d.getMilliseconds();
             // cast Object to String
             args.map(function (value) { return (typeof value).equals("object") ? JSON.stringify(value) : value; });
             // @ts-ignore
-            errorMsg = errorMsg.regExp(/(\%[a-zA-z]+)\{([a-z]+|((([lewidc]+)\?[a-z]+?\;*)+?(\:[a-z]+)*)+)\}/, function () {
-                var define = null, interupt = null, _t = type.substring(0, 1).toLowerCase();
+            errorMsg = errorMsg.regExp(Logger.COLORS_REGEXP, function () {
+                var define = null, interrupt = null, _t = type.substring(0, 1).toLowerCase();
                 if (!Logger.colorize)
                     return this[1];
                 if (this[1].equals("%type") || this[1].equals("%T") && this[3] !== undefined) {
@@ -151,16 +158,16 @@ var Logger = /** @class */ (function () {
                         define = Logger.translateColorToInt(this[6].replace(/^\:/, ""));
                     // return %parser without any color
                     else if (define === null && this[6] === undefined)
-                        interupt = this[1];
+                        interrupt = this[1];
                 }
-                return (interupt || format("\x1b[%sm%s\x1b[0m", define || Logger.translateColorToInt(this[2]), this[1]));
+                return (interrupt || format("\x1b[%sm%s\x1b[0m", define || Logger.translateColorToInt(this[2]), this[1]));
             });
-            Object().stream().of({
+            Stream.of({
                 type: type,
                 name: args.shift(),
                 time: d.getTime(),
                 hours: format("%s:%s:%s", h, m, s),
-                HH: h, mm: m, ss: s, ssss: ss,
+                ms: ss, HH: h, mm: m, ss: s,
                 T: type.substr(0, 1).toUpperCase()
             }).each(function (value, key) {
                 // @ts-ignore
@@ -170,18 +177,19 @@ var Logger = /** @class */ (function () {
              * replace message log here avoid
              * regexp fall in inifinite loop
              */
-            errorMsg = errorMsg.replace(/\%error/, format.apply(null, args));
+            errorMsg = errorMsg.replace(/\%error|\%message/gi, format.apply(null, args));
             if (Logger.saveLog) {
                 var filename_1 = Logger.fileNamePattern;
-                Object().stream().of({
+                Stream.of({
                     id: Logger.oid,
                     date: d.toLocaleDateString().replace(/\//g, "-"),
-                    HH: h, mm: m, ss: s, ssss: ss,
+                    ms: ss, HH: h, mm: m, ss: s,
                     reuse: Logger.logfileReuse
                 }).each(function (value, key) {
                     filename_1 = filename_1.replace(new RegExp("%" + key), value);
                 });
-                if (Logger.fileMaxSize === null || (Logger.fileMaxSize >= 0 && Utils_1.Utils.getFileSize(Logger.outputLog + ("/" + filename_1 + ".log")) <= Logger.fileMaxSize)) {
+                if (Logger.fileMaxSize === null || (Logger.fileMaxSize >= 0 &&
+                    Utils_1.Utils.getFileSize(Logger.outputLog + ("/" + filename_1 + ".log")) <= Logger.fileMaxSize)) {
                     try {
                         Utils_1.Utils.writeLog(Logger.outputLog, filename_1, errorMsg);
                     }
@@ -192,9 +200,11 @@ var Logger = /** @class */ (function () {
             }
             if (Logger.logStdout) {
                 if (Logger.pipeStdout !== null)
-                    this.pipeStdout.write(errorMsg);
+                    this.pipeStdout.write.call(null, errorMsg);
                 else {
                     // @ts-ignore
+                    process.stdout.clearLine(0);
+                    process.stdout.cursorTo(0);
                     process.stdout.write(errorMsg + "\n");
                 }
             }
@@ -210,6 +220,7 @@ var Logger = /** @class */ (function () {
     };
     Logger.DEFAULT_LOG_PATTERN_MONO = "%time\t%name\t: %type :\t%error";
     Logger.WEBDRIVER_LOG_PATTERN_COLORED = "[%hours{cyan}] %T{w?yellow}/%name - %error";
+    Logger.COLORS_REGEXP = /(\%[a-zA-z]+)\{([a-z]+|((([lewidc]+)\?[a-z]+?\;*)+?(\:[a-z]+)*)+)\}/;
     /***
      * Basic configuration
      */
