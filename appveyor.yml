@@ -14,5 +14,4 @@ pull_requests:
 branches:
   only:
     - develop
-build:
-  verbosity: minimal
+build: off
