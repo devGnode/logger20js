@@ -4,9 +4,10 @@ environment:
 version: 1.2.{build}
 
 install:
-  - ps: Install-Product node $env:nodejs_version
-  - ps: '"//registry.npmjs.org/:_authToken=$env:npm_auth_token`n" | out-file "$env:userprofile\.npmrc" -Encoding ASCII'
-  - ps: npm install
+  - sh: Install-Product node $env:nodejs_version
+  - sh: '"//registry.npmjs.org/:_authToken=$env:npm_auth_token`n" | out-file "$env:userprofile\.npmrc" -Encoding ASCII'
+  - sh: node --version
+  - sh: npm install
 
 pull_requests:
   do_not_increment_build_number: true
