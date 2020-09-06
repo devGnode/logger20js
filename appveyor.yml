@@ -1,0 +1,16 @@
+environment:
+  - nodejs_version:"12"
+version: 1.2.{build}
+
+install:
+  - ps: Install-Product node $env:nodejs_version
+  - ps: '"//registry.npmjs.org/:_authToken=$env:npm_auth_token`n" | out-file "$env:userprofile\.npmrc" -Encoding ASCII'
+  - ps: npm install
+
+pull_requests:
+  do_not_increment_build_number: true
+branches:
+  only:
+    - develop
+build:
+  verbosity: minimal
