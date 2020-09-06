@@ -8,7 +8,7 @@ install:
   - ps: '"//registry.npmjs.org/:_authToken=$env:npm_auth_token`n" | out-file "$env:userprofile\.npmrc" -Encoding ASCII'
   - ps: node --version
   - ps: npm install
-  - ps: npm build
+  - ps: npm run build
 
 pull_requests:
   do_not_increment_build_number: true
