@@ -1,9 +1,9 @@
-import './lib/StringExtends';
+import "lib-utils-ts/src/globalUtils";
 declare type filterLogLevel<T> = String[] | [...T[]];
 declare type strLogLevel = "ALL" | "LOG" | "DEBUG" | "ERROR" | "INFO" | "CUSTOM";
 export declare class Logger {
-    static readonly DEFAULT_LOG_PATTERN_MONO = "%time\t%name\t: %type :\t%error";
-    static readonly WEBDRIVER_LOG_PATTERN_COLORED = "[%hours{cyan}] %T{w?yellow}/%name - %error";
+    static readonly DEFAULT_LOG_PATTERN_MONO: string;
+    static readonly WEBDRIVER_LOG_PATTERN_COLORED: string;
     private static readonly COLORS_REGEXP;
     /***
      * Basic configuration
@@ -48,9 +48,10 @@ export declare class Logger {
     static setLogFilePattern(pattern?: String): void;
     static setFileMaxSize(bytes?: number): void;
     static setLogFileReuse(path?: String): void;
-    static setPipeStdout(pipe?: Function | CallableFunction): void;
+    static setPipeStdout(pipe?: Object): void;
     static setColorize(status?: boolean): void;
     private static translateColorToInt;
+    static getLoggerFileName(): String;
     /***
      * @param type, errorMsg [, Object .... ]
      */

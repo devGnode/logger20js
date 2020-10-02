@@ -1,20 +1,20 @@
+import "lib-utils-ts/src/globalUtils";
 import {v4} from 'uuid';
 import {Utils} from "./Utils";
-import './lib/StringExtends';
+import {format} from "util";
+import {HashMap} from "lib-utils-ts/export/utils-ts";
+import {ascii} from "lib-utils-ts/src/Interface";
 
-const {format} = require("util");
-const {Stream} = require("./lib/Stream.js");
 
 type filterLogLevel<T> = String[] | [ ... T[] ]
 type strLogLevel = "ALL" |"LOG" | "DEBUG" | "ERROR" | "INFO" | "CUSTOM"
 
 export class Logger{
 
-    public static readonly DEFAULT_LOG_PATTERN_MONO         = "%time\t%name\t: %type :\t%error";
-    public static readonly WEBDRIVER_LOG_PATTERN_COLORED    = "[%hours{cyan}] %T{w?yellow}/%name - %error";
+    public static readonly DEFAULT_LOG_PATTERN_MONO        : string = "%time\t%name\t: %type :\t%error";
+    public static readonly WEBDRIVER_LOG_PATTERN_COLORED   : string = "[%hours{cyan}] %T{w?yellow;e?red}/%name - %error";
 
-    private static readonly COLORS_REGEXP = /(\%[a-zA-z]+)\{([a-z]+|((([lewidc]+)\?[a-z]+?\;*)+?(\:[a-z]+)*)+)\}/;
-
+    private static readonly COLORS_REGEXP : RegExp = /(\%[a-zA-z]+)\{([a-z]+|((([lewidc]+)\?[a-z]+?\;*)+?(\:[a-z]+)*)+)\}/;
     /***
      * Basic configuration
      */
@@ -24,22 +24,18 @@ export class Logger{
     private static logStdout : boolean  = true;
     private static logLevel  : filterLogLevel<strLogLevel> = ["ALL"];
     private static colorize : boolean   = true;
-
     /**
      * output file
      */
     public static oid     : String   = v4();
-
     /***
      * handles
      */
     private static pipeStdout :  InstanceType<any>      = null;
     private static propertiesConfig : InstanceType<any> = null;
-
     private static fileNamePattern : String = "%date-%id";
     private static logfileReuse : String    = null;
     private static fileMaxSize  : number    = null;
-
     /***
      * others
      */
@@ -47,7 +43,6 @@ export class Logger{
     private pattern : String        = null;
 
     constructor( name : String = undefined ) {
-
         /***
          * Rewrite Logger configuration
          * getProperty :
@@ -56,11 +51,11 @@ export class Logger{
          */
         if(Logger.propertiesConfig!==null&&typeof Logger.propertiesConfig.getProperty === "function"){
             Logger.parser       = Logger.propertiesConfig.getProperty("loggerParser","%time\t%name\t : %type :\t%error");
-            Logger.outputLog    = Logger.propertiesConfig.getProperty("loggerOutputDir", "");
             Logger.saveLog      = Logger.propertiesConfig.getProperty("saveLog", true);
             Logger.logStdout    = Logger.propertiesConfig.getProperty("logStdout", true);
             Logger.logLevel     = Logger.propertiesConfig.getProperty("logLevel", ["ALL"]);
             Logger.fileNamePattern = Logger.propertiesConfig.getProperty("logFileNamePattern","%date-%id");
+            Logger.outputLog       = Logger.propertiesConfig.getProperty("loggerOutputDir", "");
             Logger.fileMaxSize     = Logger.propertiesConfig.getProperty("logFileMaxSize",null);
             Logger.logfileReuse    = Logger.propertiesConfig.getProperty("logFileReusePath",null);
             Logger.colorize        = Logger.propertiesConfig.getProperty("logEnabledColorize", true );
@@ -137,7 +132,7 @@ export class Logger{
         Logger.logfileReuse = path;
     }
 
-    public static setPipeStdout( pipe : Function | CallableFunction = null ) : void {
+    public static setPipeStdout( pipe : Object = null ) : void {
         Logger.pipeStdout = pipe;
     }
 
@@ -146,9 +141,28 @@ export class Logger{
     }
 
     private static translateColorToInt( color : string = "black" ) : String {
-       let colors = [,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-                    'black','red','green','yellow','blue','magenta','cyan','white','gray','grey','bblack','bred','bgreen'];
-       return colors.indexOf(color)>-1?new String(colors.indexOf(color)).toString():"30";
+       let colors : string[] = [
+                    ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+                    'black','red','green','yellow',
+                    'blue','magenta','cyan','white','gray','grey','bblack','bred','bgreen'
+                    ];
+       return colors.indexOf(color)>-1? String(colors.indexOf(color)):"30";
+    }
+
+    public static getLoggerFileName(){
+        let d = new Date(),
+            filename = Logger.fileNamePattern;
+        HashMap.of<ascii>({
+            id : Logger.oid,
+            date : d.toLocaleDateString( ).replace(/\//g,"-"),
+            ms: d.getMilliseconds(), HH:Utils.round(d.getHours()),
+            mm: Utils.round(d.getMinutes()), ss: Utils.round(d.getSeconds()),
+            reuse: Logger.logfileReuse
+        }).each((value,key)=>{
+            filename = filename.replace(new RegExp(`\%${key}`),String(value));
+        });
+
+        return filename;
     }
 
     /***
@@ -168,7 +182,8 @@ export class Logger{
 
            // cast Object to String
            args.map(value=>(typeof value).equals("object")?JSON.stringify(value):value);
-           // @ts-ignore
+
+          if(Logger.COLORS_REGEXP.test(errorMsg))
            errorMsg = errorMsg.regExp(Logger.COLORS_REGEXP,function(){
                 let define=null,interrupt=null, _t=type.substring(0,1).toLowerCase();
 
@@ -185,8 +200,7 @@ export class Logger{
                 }
                return (interrupt || format("\x1b[%sm%s\x1b[0m",define||Logger.translateColorToInt(this[2]),this[1]));
            });
-
-           Stream.of( {
+          HashMap.of<ascii>( {
                 type : type,
                 name : args.shift(),
                 time : d.getTime(),
@@ -197,37 +211,24 @@ export class Logger{
                 // @ts-ignore
                errorMsg = Utils.regExp(new RegExp(`\%${key}`),errorMsg,()=>value.toString());
             });
-
             /***
              * replace message log here avoid
-             * regexp fall in inifinite loop
+             * regexp fall in infinite loop
              */
             errorMsg = errorMsg.replace(/\%error|\%message/gi,format.apply(null,args));
            if(Logger.saveLog){
-               let filename = Logger.fileNamePattern;
-               Stream.of({
-                   id : Logger.oid,
-                   date : d.toLocaleDateString( ).replace(/\//g,"-"),
-                   ms: ss, HH:h, mm: m, ss: s,
-                   reuse: Logger.logfileReuse
-               }).each((value,key)=>{
-                   filename = filename.replace(new RegExp(`\%${key}`),value);
-               });
-
+               let filename = Logger.getLoggerFileName();
                if(
                    Logger.fileMaxSize===null || ( Logger.fileMaxSize>=0 &&
                    Utils.getFileSize(Logger.outputLog+`/${filename}.log`) <= Logger.fileMaxSize )
                ){
                    try {
                        Utils.writeLog(Logger.outputLog, filename, errorMsg);
-                   }catch (e) {
-                       console.warn(e);
-                   }
+                   }catch (e) {console.warn(e);}
                }
            }
             if(Logger.logStdout) {
-                if(Logger.pipeStdout!==null) this.pipeStdout.write.call(null,errorMsg); else {
-                    // @ts-ignore
+                if(Logger.pipeStdout!==null) Logger.pipeStdout?.write.call(null,errorMsg); else {
                     process.stdout.clearLine(0);
                     process.stdout.cursorTo(0);
                     process.stdout.write(errorMsg+"\n");

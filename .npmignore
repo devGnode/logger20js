@@ -1,2 +1,5 @@
 # CI/CD
 *.yml
+#
+Test.*
+test.*

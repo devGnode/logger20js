@@ -25,7 +25,8 @@ hours       | format type &rarr; HH:mm:ss
 HH          | hours number type
 mm          | minutes number type
 ss          | seconds number type
-error       | log message
+error  message      | log message
+message     | log message
 
 The default pattern look like to `%time\\t%name\\t: %type :\\t%error`.
 But you can customize the pattern like this `[%HH:%mm:%ss] %T/%name - %error`, and you can define multiple parser in your pattern string  `%hours - %error - %hours` 
@@ -72,14 +73,6 @@ class MyClass{
 
 }
 ```
-
-````typescript
-
-let k : List<Ert> = new ArrayLis<String>();
-
-k.add()""
-
-````
 
 output :
 
@@ -248,6 +241,12 @@ Logger.setPropertiesConfigHandle(properties);
 1581273074148	EdgeDriver	: LOG :	webDriver go to = https://google.com
 1581273075997	EdgeDriver	: LOG :	webDriver go to = https://google.com/search?q=mdr
 ```
+## Feature
+
+ - 2020-02-10 :
+    - Fix - Fix - removing of Stream.js file, this extended create conflicts with much another node js library as, Protractor, Selenium. Error of native Stream object.
+    - Background color
+ 
 
 ### From git
 
