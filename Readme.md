@@ -1,6 +1,6 @@
 # logger20js-ts
 
-<img src="https://img.shields.io/badge/Git version-1.1.6-yellowgreen"/> <img src="https://img.shields.io/github/languages/top/devGnode/logger20js"/> <img src="https://img.shields.io/badge/Javascript-ES2020-yellow"/> <img src="https://img.shields.io/npm/v/logger20js-ts"/> <img src="https://img.shields.io/node/v/logger20js-ts"/> <img src="https://img.shields.io/appveyor/build/devGnode/logger20js-ts"/> <img src="https://ci.appveyor.com/api/projects/status/github/devGnode/logger20js?svg=true&branch=develop"/>
+<img src="https://img.shields.io/badge/Git version-1.1.7-yellowgreen"/> <img src="https://img.shields.io/github/languages/top/devGnode/logger20js"/> <img src="https://img.shields.io/badge/Javascript-ES2020-yellow"/> <img src="https://img.shields.io/npm/v/logger20js-ts"/> <img src="https://img.shields.io/node/v/logger20js-ts"/> <img src="https://img.shields.io/appveyor/build/devGnode/logger20js-ts"/> <img src="https://ci.appveyor.com/api/projects/status/github/devGnode/logger20js?svg=true&branch=develop"/>
 
 Logger20js-ts is a little basic framework Logger for nodeJs or typescript project. It was written in typescript language.
  
@@ -56,6 +56,8 @@ You can define a default color for others logger with `:colorName` annotation
 - `%T{w?yellow;e?red:green}` 
 
 Another example : `%T{e?red;w?yellow;d?blue;l?blue:black}`. The types 'error' will be displayed in red color, 'warning' in yellow and 'debug' and 'log' in blue color and others log level will be displayed in black color into the console.
+
+Since `1.1.7` version. If you set color in your pattern and you have enabled record in a log file by default the message will be clean up for have readable string. But you can disabled this option just define cleanUpBeforeSave property at false  with `Logger.setCleanUpBeforeSave`. you could not modify this property from your own configuration object.
 
 Example of implementation :
 
@@ -165,6 +167,7 @@ If you want use the `reuse` pattern in your logger filename, make sure you have 
 - setLogFilePattern( path : ***String*** ) : void
 - setLogFileReuse( fileName : ***string*** ) : void
 - setColorize( status : ***boolean*** ) : void
+- setCleanUpBeforeSave( status : ***boolean*** ) : void *( default true )*
 
 For see the default configuration value go to section `set your owns properties from class`
 
@@ -241,11 +244,13 @@ Logger.setPropertiesConfigHandle(properties);
 1581273074148	EdgeDriver	: LOG :	webDriver go to = https://google.com
 1581273075997	EdgeDriver	: LOG :	webDriver go to = https://google.com/search?q=mdr
 ```
-## Feature
+## Features
 
  - 2020-02-10 :
     - Fix - removing of the Stream.js file, this extension creates conflicts with many other node js libraries like, Protractor, Selenium, resulting in an exception of the native Stream object.
     - integration of background color in cli
+ - 2020-03-10 :    
+    - Fix/Add . cleaning up message before to save in a log file
  
 
 ### From git

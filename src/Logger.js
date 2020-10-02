@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Logger = void 0;
 require("lib-utils-ts/src/globalUtils");
+var readline = require("readline");
 var uuid_1 = require("uuid");
 var Utils_1 = require("./Utils");
 var util_1 = require("util");
@@ -127,6 +128,10 @@ var Logger = /** @class */ (function () {
         if (status === void 0) { status = true; }
         Logger.colorize = status;
     };
+    Logger.setCleanUpBeforeSave = function (state) {
+        if (state === void 0) { state = Logger.cleanUpBeforeSave; }
+        Logger.cleanUpBeforeSave = state;
+    };
     Logger.translateColorToInt = function (color) {
         if (color === void 0) { color = "black"; }
         var colors = [
@@ -137,6 +142,8 @@ var Logger = /** @class */ (function () {
         ];
         return colors.indexOf(color) > -1 ? String(colors.indexOf(color)) : "30";
     };
+    /***
+     */
     Logger.getLoggerFileName = function () {
         var d = new Date(), filename = Logger.fileNamePattern;
         utils_ts_1.HashMap.of({
@@ -151,57 +158,88 @@ var Logger = /** @class */ (function () {
         return filename;
     };
     /***
-     * @param type, errorMsg [, Object .... ]
+     * @param message
+     * @param type
+     * @param colorize
+     */
+    Logger.colorizeString = function (message, type, colorize) {
+        if (message === void 0) { message = null; }
+        if (type === void 0) { type = null; }
+        if (colorize === void 0) { colorize = Logger.colorize; }
+        return message.regExp(Logger.COLORS_REGEXP, function () {
+            var define = null, interrupt = null, _t = type.substring(0, 1).toLowerCase();
+            if (!colorize)
+                return this[1];
+            if (this[1].equals("%type") || this[1].equals("%T") && this[3] !== undefined) {
+                // try to define color
+                this[2].regExp(/([lewidc]{1})\?([a-z]+)?\;*/, function () {
+                    if (_t.equals(this[1]))
+                        define = Logger.translateColorToInt(this[2]);
+                });
+                // default color
+                if (define === null && this[6] !== undefined)
+                    define = Logger.translateColorToInt(this[6].replace(/^\:/, ""));
+                // return %parser without any color
+                else if (define === null && this[6] === undefined)
+                    interrupt = this[1];
+            }
+            return (interrupt || util_1.format("\x1b[%sm%s\x1b[0m", define || Logger.translateColorToInt(this[2]), this[1]));
+        });
+    };
+    /***
+     * @param message
+     * @param type
+     * @param name
+     */
+    Logger.parseString = function (message, type, name) {
+        if (message === void 0) { message = null; }
+        if (type === void 0) { type = null; }
+        if (name === void 0) { name = null; }
+        var d = new Date(), h = Utils_1.Utils.round(d.getHours()), m = Utils_1.Utils.round(d.getMinutes()), s = Utils_1.Utils.round(d.getSeconds()), ss = d.getMilliseconds();
+        utils_ts_1.HashMap.of({
+            type: type,
+            name: name,
+            time: d.getTime(),
+            hours: util_1.format("%s:%s:%s", h, m, s),
+            ms: ss, HH: h, mm: m, ss: s,
+            T: type.substr(0, 1).toUpperCase()
+        }).each(function (value, key) {
+            // @ts-ignore
+            message = Utils_1.Utils.regExp(new RegExp("%" + key), message, function () { return value.toString(); });
+        });
+        return message;
+    };
+    /***
+     * @param type, message [, Object .... ]
      */
     Logger.stdout = function () {
         var _a;
-        var args = Array.from(arguments), type = args.shift().toUpperCase(), errorMsg = args.shift() || Logger.parser;
+        var args = Array.from(arguments), type = args.shift().toUpperCase(), message = args.shift() || Logger.parser, out = new utils_ts_1.ArrayList();
         if (Logger.logLevel.indexOf(type.toUpperCase()) > -1 || Logger.logLevel.indexOf("ALL") > -1) {
-            var d = new Date(), h = Utils_1.Utils.round(d.getHours()), m = Utils_1.Utils.round(d.getMinutes()), s = Utils_1.Utils.round(d.getSeconds()), ss = d.getMilliseconds();
             // cast Object to String
             args.map(function (value) { return (typeof value).equals("object") ? JSON.stringify(value) : value; });
-            if (Logger.COLORS_REGEXP.test(errorMsg))
-                errorMsg = errorMsg.regExp(Logger.COLORS_REGEXP, function () {
-                    var define = null, interrupt = null, _t = type.substring(0, 1).toLowerCase();
-                    if (!Logger.colorize)
-                        return this[1];
-                    if (this[1].equals("%type") || this[1].equals("%T") && this[3] !== undefined) {
-                        // try to define color
-                        this[2].regExp(/([lewidc]{1})\?([a-z]+)?\;*/, function () {
-                            if (_t.equals(this[1]))
-                                define = Logger.translateColorToInt(this[2]);
-                        });
-                        // default color
-                        if (define === null && this[6] !== undefined)
-                            define = Logger.translateColorToInt(this[6].replace(/^\:/, ""));
-                        // return %parser without any color
-                        else if (define === null && this[6] === undefined)
-                            interrupt = this[1];
-                    }
-                    return (interrupt || util_1.format("\x1b[%sm%s\x1b[0m", define || Logger.translateColorToInt(this[2]), this[1]));
-                });
-            utils_ts_1.HashMap.of({
-                type: type,
-                name: args.shift(),
-                time: d.getTime(),
-                hours: util_1.format("%s:%s:%s", h, m, s),
-                ms: ss, HH: h, mm: m, ss: s,
-                T: type.substr(0, 1).toUpperCase()
-            }).each(function (value, key) {
-                // @ts-ignore
-                errorMsg = Utils_1.Utils.regExp(new RegExp("%" + key), errorMsg, function () { return value.toString(); });
-            });
-            /***
-             * replace message log here avoid
-             * regexp fall in infinite loop
-             */
-            errorMsg = errorMsg.replace(/\%error|\%message/gi, util_1.format.apply(null, args));
+            // check if colorize pattern
+            if (Logger.COLORS_REGEXP.test(message)) {
+                if (Logger.cleanUpBeforeSave && Logger.saveLog)
+                    out.add(Logger.colorizeString(message, type, false)); // cleanUp
+                out.add(Logger.colorizeString(message, type, Logger.colorize));
+            }
+            var name_1 = args.shift();
+            out = out.stream()
+                .map(function (value) { return Logger.parseString(value, type, name_1); })
+                /***
+                 * replace message log here avoid
+                 * regexp fall in infinite loop
+                 */
+                .map(function (value) { return value.replace(/\%error|\%message/gi, util_1.format.apply(null, args)); })
+                .getList();
             if (Logger.saveLog) {
+                // implement-logRotate
                 var filename = Logger.getLoggerFileName();
                 if (Logger.fileMaxSize === null || (Logger.fileMaxSize >= 0 &&
                     Utils_1.Utils.getFileSize(Logger.outputLog + ("/" + filename + ".log")) <= Logger.fileMaxSize)) {
                     try {
-                        Utils_1.Utils.writeLog(Logger.outputLog, filename, errorMsg);
+                        Utils_1.Utils.writeLog(Logger.outputLog, filename, out.get(0));
                     }
                     catch (e) {
                         console.warn(e);
@@ -209,12 +247,13 @@ var Logger = /** @class */ (function () {
                 }
             }
             if (Logger.logStdout) {
+                message = out.get(out.size() > 1 ? 1 : 0);
                 if (Logger.pipeStdout !== null)
-                    (_a = Logger.pipeStdout) === null || _a === void 0 ? void 0 : _a.write.call(null, errorMsg);
+                    (_a = Logger.pipeStdout) === null || _a === void 0 ? void 0 : _a.write.call(null, message);
                 else {
-                    //process.stdout.clearLine(0);
-                    //process.stdout.cursorTo(0);
-                    process.stdout.write(errorMsg + "\n");
+                    readline.clearLine(process.stdout, 0);
+                    readline.cursorTo(process.stdout, 0);
+                    process.stdout.write(message + "\n");
                 }
             }
         }
@@ -239,6 +278,7 @@ var Logger = /** @class */ (function () {
     Logger.logStdout = true;
     Logger.logLevel = ["ALL"];
     Logger.colorize = true;
+    Logger.cleanUpBeforeSave = true;
     /**
      * output file
      */
