@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Logger = void 0;
+require("lib-utils-ts/src/globalUtils");
 var uuid_1 = require("uuid");
 var Utils_1 = require("./Utils");
-require("lib-utils-ts/src/globalUtils");
 var util_1 = require("util");
 var utils_ts_1 = require("lib-utils-ts/export/utils-ts");
 var Logger = /** @class */ (function () {
@@ -212,8 +212,8 @@ var Logger = /** @class */ (function () {
                 if (Logger.pipeStdout !== null)
                     (_a = Logger.pipeStdout) === null || _a === void 0 ? void 0 : _a.write.call(null, errorMsg);
                 else {
-                    process.stdout.clearLine(0);
-                    process.stdout.cursorTo(0);
+                    //process.stdout.clearLine(0);
+                    //process.stdout.cursorTo(0);
                     process.stdout.write(errorMsg + "\n");
                 }
             }

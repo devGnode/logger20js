@@ -1,6 +1,6 @@
 {
   "name": "logger20js-ts",
-  "version": "1.1.2",
+  "version": "1.1.6",
   "author": "Maroder - <devgnode@gmail.com>",
   "description": "logger for nodejs and typescript - logger20js-ts",
   "main": "export/Logger20js.js",
