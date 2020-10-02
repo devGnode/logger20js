@@ -3,9 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Logger = void 0;
 var uuid_1 = require("uuid");
 var Utils_1 = require("./Utils");
-require("./lib/StringExtends");
-var format = require("util").format;
-var Stream = require("./lib/Stream.js").Stream;
+require("lib-utils-ts/src/globalUtils");
+var util_1 = require("util");
+var utils_ts_1 = require("lib-utils-ts/export/utils-ts");
 var Logger = /** @class */ (function () {
     function Logger(name) {
         if (name === void 0) { name = undefined; }
@@ -22,11 +22,11 @@ var Logger = /** @class */ (function () {
          */
         if (Logger.propertiesConfig !== null && typeof Logger.propertiesConfig.getProperty === "function") {
             Logger.parser = Logger.propertiesConfig.getProperty("loggerParser", "%time\t%name\t : %type :\t%error");
-            Logger.outputLog = Logger.propertiesConfig.getProperty("loggerOutputDir", "");
             Logger.saveLog = Logger.propertiesConfig.getProperty("saveLog", true);
             Logger.logStdout = Logger.propertiesConfig.getProperty("logStdout", true);
             Logger.logLevel = Logger.propertiesConfig.getProperty("logLevel", ["ALL"]);
             Logger.fileNamePattern = Logger.propertiesConfig.getProperty("logFileNamePattern", "%date-%id");
+            Logger.outputLog = Logger.propertiesConfig.getProperty("loggerOutputDir", "");
             Logger.fileMaxSize = Logger.propertiesConfig.getProperty("logFileMaxSize", null);
             Logger.logfileReuse = Logger.propertiesConfig.getProperty("logFileReusePath", null);
             Logger.colorize = Logger.propertiesConfig.getProperty("logEnabledColorize", true);
@@ -129,44 +129,62 @@ var Logger = /** @class */ (function () {
     };
     Logger.translateColorToInt = function (color) {
         if (color === void 0) { color = "black"; }
-        var colors = [, , , , , , , , , , , , , , , , , , , , , , , , , , , , , ,
-            'black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white', 'gray', 'grey', 'bblack', 'bred', 'bgreen'];
-        return colors.indexOf(color) > -1 ? new String(colors.indexOf(color)).toString() : "30";
+        var colors = [
+            ,
+            , , , , , , , , , , , , , , , , , , , , , , , , , , , , ,
+            'black', 'red', 'green', 'yellow',
+            'blue', 'magenta', 'cyan', 'white', 'gray', 'grey', 'bblack', 'bred', 'bgreen'
+        ];
+        return colors.indexOf(color) > -1 ? String(colors.indexOf(color)) : "30";
+    };
+    Logger.getLoggerFileName = function () {
+        var d = new Date(), filename = Logger.fileNamePattern;
+        utils_ts_1.HashMap.of({
+            id: Logger.oid,
+            date: d.toLocaleDateString().replace(/\//g, "-"),
+            ms: d.getMilliseconds(), HH: Utils_1.Utils.round(d.getHours()),
+            mm: Utils_1.Utils.round(d.getMinutes()), ss: Utils_1.Utils.round(d.getSeconds()),
+            reuse: Logger.logfileReuse
+        }).each(function (value, key) {
+            filename = filename.replace(new RegExp("%" + key), String(value));
+        });
+        return filename;
     };
     /***
      * @param type, errorMsg [, Object .... ]
      */
     Logger.stdout = function () {
+        var _a;
         var args = Array.from(arguments), type = args.shift().toUpperCase(), errorMsg = args.shift() || Logger.parser;
         if (Logger.logLevel.indexOf(type.toUpperCase()) > -1 || Logger.logLevel.indexOf("ALL") > -1) {
             var d = new Date(), h = Utils_1.Utils.round(d.getHours()), m = Utils_1.Utils.round(d.getMinutes()), s = Utils_1.Utils.round(d.getSeconds()), ss = d.getMilliseconds();
             // cast Object to String
             args.map(function (value) { return (typeof value).equals("object") ? JSON.stringify(value) : value; });
-            // @ts-ignore
-            errorMsg = errorMsg.regExp(Logger.COLORS_REGEXP, function () {
-                var define = null, interrupt = null, _t = type.substring(0, 1).toLowerCase();
-                if (!Logger.colorize)
-                    return this[1];
-                if (this[1].equals("%type") || this[1].equals("%T") && this[3] !== undefined) {
-                    // try to define color
-                    this[2].regExp(/([lewidc]{1})\?([a-z]+)?\;*/, function () {
-                        if (_t.equals(this[1]))
-                            define = Logger.translateColorToInt(this[2]);
-                    });
-                    // default color
-                    if (define === null && this[6] !== undefined)
-                        define = Logger.translateColorToInt(this[6].replace(/^\:/, ""));
-                    // return %parser without any color
-                    else if (define === null && this[6] === undefined)
-                        interrupt = this[1];
-                }
-                return (interrupt || format("\x1b[%sm%s\x1b[0m", define || Logger.translateColorToInt(this[2]), this[1]));
-            });
-            Stream.of({
+            if (Logger.COLORS_REGEXP.test(errorMsg))
+                errorMsg = errorMsg.regExp(Logger.COLORS_REGEXP, function () {
+                    var define = null, interrupt = null, _t = type.substring(0, 1).toLowerCase();
+                    if (!Logger.colorize)
+                        return this[1];
+                    if (this[1].equals("%type") || this[1].equals("%T") && this[3] !== undefined) {
+                        // try to define color
+                        this[2].regExp(/([lewidc]{1})\?([a-z]+)?\;*/, function () {
+                            if (_t.equals(this[1]))
+                                define = Logger.translateColorToInt(this[2]);
+                        });
+                        // default color
+                        if (define === null && this[6] !== undefined)
+                            define = Logger.translateColorToInt(this[6].replace(/^\:/, ""));
+                        // return %parser without any color
+                        else if (define === null && this[6] === undefined)
+                            interrupt = this[1];
+                    }
+                    return (interrupt || util_1.format("\x1b[%sm%s\x1b[0m", define || Logger.translateColorToInt(this[2]), this[1]));
+                });
+            utils_ts_1.HashMap.of({
                 type: type,
                 name: args.shift(),
                 time: d.getTime(),
-                hours: format("%s:%s:%s", h, m, s),
+                hours: util_1.format("%s:%s:%s", h, m, s),
                 ms: ss, HH: h, mm: m, ss: s,
                 T: type.substr(0, 1).toUpperCase()
             }).each(function (value, key) {
@@ -175,23 +193,15 @@ var Logger = /** @class */ (function () {
             });
             /***
              * replace message log here avoid
-             * regexp fall in inifinite loop
+             * regexp fall in infinite loop
              */
-            errorMsg = errorMsg.replace(/\%error|\%message/gi, format.apply(null, args));
+            errorMsg = errorMsg.replace(/\%error|\%message/gi, util_1.format.apply(null, args));
             if (Logger.saveLog) {
-                var filename_1 = Logger.fileNamePattern;
-                Stream.of({
-                    id: Logger.oid,
-                    date: d.toLocaleDateString().replace(/\//g, "-"),
-                    ms: ss, HH: h, mm: m, ss: s,
-                    reuse: Logger.logfileReuse
-                }).each(function (value, key) {
-                    filename_1 = filename_1.replace(new RegExp("%" + key), value);
-                });
+                var filename = Logger.getLoggerFileName();
                 if (Logger.fileMaxSize === null || (Logger.fileMaxSize >= 0 &&
-                    Utils_1.Utils.getFileSize(Logger.outputLog + ("/" + filename_1 + ".log")) <= Logger.fileMaxSize)) {
+                    Utils_1.Utils.getFileSize(Logger.outputLog + ("/" + filename + ".log")) <= Logger.fileMaxSize)) {
                     try {
-                        Utils_1.Utils.writeLog(Logger.outputLog, filename_1, errorMsg);
+                        Utils_1.Utils.writeLog(Logger.outputLog, filename, errorMsg);
                     }
                     catch (e) {
                         console.warn(e);
@@ -200,9 +210,8 @@ var Logger = /** @class */ (function () {
             }
             if (Logger.logStdout) {
                 if (Logger.pipeStdout !== null)
-                    this.pipeStdout.write.call(null, errorMsg);
+                    (_a = Logger.pipeStdout) === null || _a === void 0 ? void 0 : _a.write.call(null, errorMsg);
                 else {
-                    // @ts-ignore
                     process.stdout.clearLine(0);
                     process.stdout.cursorTo(0);
                     process.stdout.write(errorMsg + "\n");
@@ -219,7 +228,7 @@ var Logger = /** @class */ (function () {
         return new Logger(name);
     };
     Logger.DEFAULT_LOG_PATTERN_MONO = "%time\t%name\t: %type :\t%error";
-    Logger.WEBDRIVER_LOG_PATTERN_COLORED = "[%hours{cyan}] %T{w?yellow}/%name - %error";
+    Logger.WEBDRIVER_LOG_PATTERN_COLORED = "[%hours{cyan}] %T{w?yellow;e?red}/%name - %error";
     Logger.COLORS_REGEXP = /(\%[a-zA-z]+)\{([a-z]+|((([lewidc]+)\?[a-z]+?\;*)+?(\:[a-z]+)*)+)\}/;
     /***
      * Basic configuration
