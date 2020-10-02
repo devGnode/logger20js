@@ -1,8 +1,9 @@
 import "lib-utils-ts/src/globalUtils";
+import * as readline from 'readline';
 import {v4} from 'uuid';
 import {Utils} from "./Utils";
 import {format} from "util";
-import {HashMap} from "lib-utils-ts/export/utils-ts";
+import {HashMap,List,ArrayList} from "lib-utils-ts/export/utils-ts";
 import {ascii} from "lib-utils-ts/src/Interface";
 
 
@@ -24,6 +25,8 @@ export class Logger{
     private static logStdout : boolean  = true;
     private static logLevel  : filterLogLevel<strLogLevel> = ["ALL"];
     private static colorize : boolean   = true;
+    private static cleanUpBeforeSave : boolean = true;
+
     /**
      * output file
      */
@@ -60,7 +63,6 @@ export class Logger{
             Logger.logfileReuse    = Logger.propertiesConfig.getProperty("logFileReusePath",null);
             Logger.colorize        = Logger.propertiesConfig.getProperty("logEnabledColorize", true );
         }
-
         this.name = name;
     }
 
@@ -140,6 +142,10 @@ export class Logger{
         Logger.colorize = status;
     }
 
+    public static setCleanUpBeforeSave( state : boolean = Logger.cleanUpBeforeSave ) : void {
+        Logger.cleanUpBeforeSave = state;
+    }
+
     private static translateColorToInt( color : string = "black" ) : String {
        let colors : string[] = [
                     ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -149,7 +155,9 @@ export class Logger{
        return colors.indexOf(color)>-1? String(colors.indexOf(color)):"30";
     }
 
-    public static getLoggerFileName(){
+    /***
+     */
+    public static getLoggerFileName() : String {
         let d = new Date(),
             filename = Logger.fileNamePattern;
         HashMap.of<ascii>({
@@ -166,72 +174,100 @@ export class Logger{
     }
 
     /***
-     * @param type, errorMsg [, Object .... ]
+     * @param message
+     * @param type
+     * @param colorize
+     */
+    private static colorizeString( message : string = null, type :string = null, colorize: boolean = Logger.colorize ) : string {
+        return message.regExp(Logger.COLORS_REGEXP,function(){
+            let define=null,interrupt=null, _t=type.substring(0,1).toLowerCase();
+
+            if(!colorize) return this[1];
+            if(this[1].equals("%type")||this[1].equals("%T")&&this[3]!==undefined){
+                // try to define color
+                this[2].regExp(/([lewidc]{1})\?([a-z]+)?\;*/,function(){
+                    if(_t.equals(this[1]))define = Logger.translateColorToInt(this[2]);
+                });
+                // default color
+                if(define===null&&this[6]!==undefined)define=Logger.translateColorToInt(this[6].replace(/^\:/,""));
+                // return %parser without any color
+                else if(define===null&&this[6]===undefined) interrupt=this[1];
+            }
+            return (interrupt || format("\x1b[%sm%s\x1b[0m",define||Logger.translateColorToInt(this[2]),this[1]));
+        });
+    }
+
+    /***
+     * @param message
+     * @param type
+     * @param name
+     */
+    private static parseString( message : String = null, type : string = null, name : string = null ) : String {
+        let d = new Date(),
+            h = Utils.round(d.getHours()), m = Utils.round(d.getMinutes()),
+            s = Utils.round(d.getSeconds()), ss= d.getMilliseconds() ;
+
+        HashMap.of<ascii>( {
+            type : type,
+            name : name,
+            time : d.getTime(),
+            hours: format("%s:%s:%s",h,m,s),
+            ms: ss, HH:h, mm: m, ss: s,
+            T: type.substr(0,1).toUpperCase()
+        }).each((value,key)=>{
+            // @ts-ignore
+            message = Utils.regExp(new RegExp(`\%${key}`),message,()=>value.toString());
+        });
+        return message;
+    }
+
+    /***
+     * @param type, message [, Object .... ]
      */
     private static stdout( ) : void {
         let args     = Array.from(arguments),
             type     = args.shift().toUpperCase(),
-            errorMsg =  args.shift() || Logger.parser;
+            message  =  args.shift() || Logger.parser,
+            out : List<String> = new ArrayList<String>();
 
         if( Logger.logLevel.indexOf(type.toUpperCase())>-1||Logger.logLevel.indexOf("ALL")>-1) {
-           let d = new Date(),
-               h = Utils.round(d.getHours()),
-               m = Utils.round(d.getMinutes()),
-               s = Utils.round(d.getSeconds()),
-               ss= d.getMilliseconds() ;
 
-           // cast Object to String
-           args.map(value=>(typeof value).equals("object")?JSON.stringify(value):value);
+            // cast Object to String
+            args.map(value=>(typeof value).equals("object")?JSON.stringify(value):value);
+            // check if colorize pattern
+            if(Logger.COLORS_REGEXP.test(message)) {
+                if(Logger.cleanUpBeforeSave&&Logger.saveLog) out.add(Logger.colorizeString(message, type,false)); // cleanUp
+                out.add(Logger.colorizeString(message, type, Logger.colorize));
+            }
 
-          if(Logger.COLORS_REGEXP.test(errorMsg))
-           errorMsg = errorMsg.regExp(Logger.COLORS_REGEXP,function(){
-                let define=null,interrupt=null, _t=type.substring(0,1).toLowerCase();
+          let name = args.shift();
+          out = out.stream()
+              .map(value=>Logger.parseString(value,type,name))
+              /***
+               * replace message log here avoid
+               * regexp fall in infinite loop
+               */
+              .map(value=>value.replace(/\%error|\%message/gi,format.apply(null,args)))
+              .getList();
 
-                if(!Logger.colorize) return this[1];
-                if(this[1].equals("%type")||this[1].equals("%T")&&this[3]!==undefined){
-                    // try to define color
-                    this[2].regExp(/([lewidc]{1})\?([a-z]+)?\;*/,function(){
-                        if(_t.equals(this[1]))define = Logger.translateColorToInt(this[2]);
-                   });
-                   // default color
-                   if(define===null&&this[6]!==undefined)define=Logger.translateColorToInt(this[6].replace(/^\:/,""));
-                   // return %parser without any color
-                   else if(define===null&&this[6]===undefined) interrupt=this[1];
-                }
-               return (interrupt || format("\x1b[%sm%s\x1b[0m",define||Logger.translateColorToInt(this[2]),this[1]));
-           });
-          HashMap.of<ascii>( {
-                type : type,
-                name : args.shift(),
-                time : d.getTime(),
-                hours: format("%s:%s:%s",h,m,s),
-                ms: ss, HH:h, mm: m, ss: s,
-                T: type.substr(0,1).toUpperCase()
-            }).each((value,key)=>{
-                // @ts-ignore
-               errorMsg = Utils.regExp(new RegExp(`\%${key}`),errorMsg,()=>value.toString());
-            });
-            /***
-             * replace message log here avoid
-             * regexp fall in infinite loop
-             */
-            errorMsg = errorMsg.replace(/\%error|\%message/gi,format.apply(null,args));
            if(Logger.saveLog){
+               // implement-logRotate
                let filename = Logger.getLoggerFileName();
                if(
                    Logger.fileMaxSize===null || ( Logger.fileMaxSize>=0 &&
                    Utils.getFileSize(Logger.outputLog+`/${filename}.log`) <= Logger.fileMaxSize )
                ){
                    try {
-                       Utils.writeLog(Logger.outputLog, filename, errorMsg);
+                       Utils.writeLog(Logger.outputLog, filename, out.get(0) );
                    }catch (e) {console.warn(e);}
                }
            }
             if(Logger.logStdout) {
-                if(Logger.pipeStdout!==null) Logger.pipeStdout?.write.call(null,errorMsg); else {
-                    //process.stdout.clearLine(0);
-                    //process.stdout.cursorTo(0);
-                    process.stdout.write(errorMsg+"\n");
+                message = out.get( out.size()>1? 1 : 0 );
+                if(Logger.pipeStdout!==null) Logger.pipeStdout?.write.call(null,message); else {
+                    readline.clearLine(process.stdout,0);
+                    readline.cursorTo(process.stdout,0);
+                    process.stdout.write(message+"\n");
                 }
             }
         }

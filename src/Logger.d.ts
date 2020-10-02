@@ -14,6 +14,7 @@ export declare class Logger {
     private static logStdout;
     private static logLevel;
     private static colorize;
+    private static cleanUpBeforeSave;
     /**
      * output file
      */
@@ -50,10 +51,25 @@ export declare class Logger {
     static setLogFileReuse(path?: String): void;
     static setPipeStdout(pipe?: Object): void;
     static setColorize(status?: boolean): void;
+    static setCleanUpBeforeSave(state?: boolean): void;
     private static translateColorToInt;
+    /***
+     */
     static getLoggerFileName(): String;
     /***
-     * @param type, errorMsg [, Object .... ]
+     * @param message
+     * @param type
+     * @param colorize
+     */
+    private static colorizeString;
+    /***
+     * @param message
+     * @param type
+     * @param name
+     */
+    private static parseString;
+    /***
+     * @param type, message [, Object .... ]
      */
     private static stdout;
     /***
