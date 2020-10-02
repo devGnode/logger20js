@@ -1,6 +1,6 @@
 # logger20js-ts
 
-<img src="https://img.shields.io/badge/Git version-1.1.2-yellowgreen"/> <img src="https://img.shields.io/github/languages/top/devGnode/logger20js"/> <img src="https://img.shields.io/badge/Javascript-ES2020-yellow"/> <img src="https://img.shields.io/npm/v/logger20js-ts"/> <img src="https://img.shields.io/node/v/logger20js-ts"/> <img src="https://img.shields.io/appveyor/build/devGnode/logger20js-ts"/> <img src="https://ci.appveyor.com/api/projects/status/github/devGnode/logger20js?svg=true&branch=develop"/>
+<img src="https://img.shields.io/badge/Git version-1.1.6-yellowgreen"/> <img src="https://img.shields.io/github/languages/top/devGnode/logger20js"/> <img src="https://img.shields.io/badge/Javascript-ES2020-yellow"/> <img src="https://img.shields.io/npm/v/logger20js-ts"/> <img src="https://img.shields.io/node/v/logger20js-ts"/> <img src="https://img.shields.io/appveyor/build/devGnode/logger20js-ts"/> <img src="https://ci.appveyor.com/api/projects/status/github/devGnode/logger20js?svg=true&branch=develop"/>
 
 Logger20js-ts is a little basic framework Logger for nodeJs or typescript project. It was written in typescript language.
  
@@ -244,8 +244,8 @@ Logger.setPropertiesConfigHandle(properties);
 ## Feature
 
  - 2020-02-10 :
-    - Fix - Fix - removing of Stream.js file, this extended create conflicts with much another node js library as, Protractor, Selenium. Error of native Stream object.
-    - Background color
+    - Fix - removing of the Stream.js file, this extension creates conflicts with many other node js libraries like, Protractor, Selenium, resulting in an exception of the native Stream object.
+    - integration of background color in cli
  
 
 ### From git
