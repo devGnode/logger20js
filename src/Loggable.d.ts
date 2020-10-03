@@ -1,6 +1,6 @@
 import { Logger } from "./Logger";
 export declare type filterLogLevel<T> = String[] | [...T[]];
-export declare type strLogLevel = "ALL" | "LOG" | "DEBUG" | "ERROR" | "INFO" | "CUSTOM";
+export declare type strLogLevel = "ALL" | "LOG" | "DEBUG" | "ERROR" | "INFO" | "CUSTOM" | "WARN";
 export interface Loggable {
     warn(...args: any[]): void;
     log(...args: any[]): void;

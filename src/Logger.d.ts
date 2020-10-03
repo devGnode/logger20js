@@ -15,6 +15,8 @@ export declare class Logger implements Loggable {
     private static logLevel;
     private static colorize;
     private static cleanUpBeforeSave;
+    private static logRotate;
+    private static rotateOutOfTimestamp;
     /**
      * output file
      */
@@ -60,6 +62,8 @@ export declare class Logger implements Loggable {
     static setPipeStdout(pipe?: Object): void;
     static setColorize(status?: boolean): void;
     static setCleanUpBeforeSave(state?: boolean): void;
+    static setLogRotate(rotate?: string): void;
+    private static restartRotate;
     private static translateColorToInt;
     /***
      */

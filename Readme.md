@@ -52,13 +52,13 @@ It possible to colorize the output parser like this : `[%hours{blue}] - %type{ye
 
 - `%T{w?yellow;e?red}` or `%type{w?yellow;e?red}`
 
-You can define a default color for others logger with `:colorName` annotation
+You can define a default color for others log level with `:colorName` annotation
 
 - `%T{w?yellow;e?red:green}` 
 
 Another example : `%T{e?red;w?yellow;d?blue;l?blue:black}`. The types 'error' will be displayed in red color, 'warning' in yellow and 'debug' and 'log' in blue color and others log level will be displayed in black color into the console.
 
-Since `1.1.7` version. If you set color in your pattern and you have enabled record in a log file by default the message will be clean up for have readable string. But you can disabled this option just define cleanUpBeforeSave property at false  with `Logger.setCleanUpBeforeSave`. you could not modify this property from your own configuration object.
+Since the version`1.1.7` . If you define color in your pattern and you have enabled record in a log file by default the message will be clean up for have readable string. But you can disabled this option just define cleanUpBeforeSave property at false  with `Logger.setCleanUpBeforeSave`. you could not modify this property from your own configuration object.
 
 Example of implementation :
 
@@ -149,7 +149,8 @@ date         | LocalDate format : YYYY-dd-mm
 HH          | hours number type
 mm          | minutes number type
 ss          | seconds number type
-reuse        | allow reuse of an existing log file
+rotate      | overflow timestamp 23 bits
+<s>reuse</s>        | <s>allow reuse of an existing log file</s>
 
 - fileNamePattern : default `%date-%id`
 
@@ -158,6 +159,24 @@ Logger.setLogFilePattern("environment-%date-%id");
 ````
 
 If you want use the `reuse` option in your pattern for your log filename, make sure you have defined the reuse filename with `Logger.setLogFileReuse` without define the extension `.log` in the filename. But this method will be deprecated in the future release, just define your existing log file on your pattern with `setLogFilePattern`.
+
+### Log rotate
+
+If you want enabled log rotate define in your pattern filename `%rotate` parser.
+`%rotate` value is an overflow timestamp 32 bits. By default log rotate is disabled.
+
+Some rotate example :
+
++ 5d &rarr; 5 days
++ 1h &rarr; 1 hour
++ 5m &rarr; 5 min
++ 5d:10m &rarr; 5 days 10 minutes  
++ 5d:8h:1m &rarr; 5 days 8 hours & one minute
+
+```javascript
+Logger.setLogFilePattern("%id%rotate");
+Logger.setLogRotate("1d"); // new log file every day
+````
 
 ### static access
 
@@ -288,8 +307,8 @@ For define the pattern for express middleware it's the same way that you define 
         - Fix - removing of the Stream.js file, this extension creates conflicts with many other node js libraries like, Protractor, Selenium, resulting in an exception of the native Stream object.
         - Integration of background color in cli  
         - Fix/Add - cleaning message before to save in a log file
-- 1.1.8 
-    - 2020-03-10 :
+- 1.2.0 
+    - 2020-06-10 :
         - Implementation of Express middleware route logger
         - Implementation - loader event
 
