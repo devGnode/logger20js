@@ -109,6 +109,16 @@ var Utils = /** @class */ (function () {
         }
         return util_1.format("%s%s%s%s", (h > 0 ? Utils.round(h) + ":" : ""), m > 0 ? Utils.round(m) + ":" : "", s > 0 ? Utils.round(s) + "." : "", Utils.repeat("0", 3 - String(ms).length) + ms);
     };
+    Utils.getRotateTimestampOutOf = function (rotate, date) {
+        if (rotate === void 0) { rotate = null; }
+        if (date === void 0) { date = null; }
+        var tmp, sec;
+        if ((tmp = /^((\d+)d?(\:)*)*((\d+)h?(\:)*)*((\d+)m)*$/.exec(rotate))) {
+            sec = parseInt(tmp[2] || 0) * 86400 + parseInt(tmp[5] || 0) * 3600 + parseInt(tmp[8] || 0) * 60;
+            return new Date((date || new Date()).getTime() + (sec * 1000));
+        }
+        return null;
+    };
     return Utils;
 }());
 exports.Utils = Utils;

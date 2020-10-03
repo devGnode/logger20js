@@ -24,4 +24,5 @@ export declare class Utils {
     static merge(objA?: Object, objB?: Object): Object;
     static repeat(value?: string, loop?: number): string;
     static parseTime(timeStamp?: number): string;
+    static getRotateTimestampOutOf(rotate?: string, date?: Date): Date;
 }

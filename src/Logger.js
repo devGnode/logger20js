@@ -159,6 +159,18 @@ var Logger = /** @class */ (function () {
         if (state === void 0) { state = Logger.cleanUpBeforeSave; }
         Logger.cleanUpBeforeSave = state;
     };
+    Logger.setLogRotate = function (rotate) {
+        if (rotate === void 0) { rotate = "1d"; }
+        var date;
+        if ((date = Utils_1.Utils.getRotateTimestampOutOf(rotate))) {
+            this.rotateOutOfTimestamp = date;
+            return;
+        }
+        this.rotateOutOfTimestamp = null;
+    };
+    Logger.restartRotate = function () {
+        this.rotateOutOfTimestamp = Utils_1.Utils.getRotateTimestampOutOf(Logger.logRotate);
+    };
     Logger.translateColorToInt = function (color) {
         if (color === void 0) { color = "black"; }
         var colors = [
@@ -178,6 +190,7 @@ var Logger = /** @class */ (function () {
             date: d.toLocaleDateString().replace(/\//g, "-"),
             ms: d.getMilliseconds(), HH: Utils_1.Utils.round(d.getHours()),
             mm: Utils_1.Utils.round(d.getMinutes()), ss: Utils_1.Utils.round(d.getSeconds()),
+            rotate: "." + String(Logger.rotateOutOfTimestamp.getTime()),
             reuse: Logger.logfileReuse
         }).each(function (value, key) {
             filename = filename.replace(new RegExp("%" + key), String(value));
@@ -262,7 +275,10 @@ var Logger = /** @class */ (function () {
                 .map(function (value) { return value.replace(/\%error|\%message/gi, util_1.format.apply(null, args)); })
                 .getList();
             if (Logger.saveLog) {
-                // implement-logRotate
+                // logRotate
+                if (Logger.rotateOutOfTimestamp && (new Date()).getTime() > Logger.rotateOutOfTimestamp.getTime()) {
+                    Logger.restartRotate();
+                }
                 var filename = Logger.getLoggerFileName();
                 if (Logger.fileMaxSize === null || (Logger.fileMaxSize >= 0 &&
                     Utils_1.Utils.getFileSize(Logger.outputLog + ("/" + filename + ".log")) <= Logger.fileMaxSize)) {
@@ -337,6 +353,8 @@ var Logger = /** @class */ (function () {
     Logger.logLevel = ["ALL"];
     Logger.colorize = true;
     Logger.cleanUpBeforeSave = true;
+    Logger.logRotate = "1m";
+    Logger.rotateOutOfTimestamp = Utils_1.Utils.getRotateTimestampOutOf(Logger.logRotate);
     /**
      * output file
      */

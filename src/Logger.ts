@@ -24,6 +24,8 @@ export class Logger implements Loggable{
     private static logLevel  : filterLogLevel<strLogLevel> = ["ALL"];
     private static colorize : boolean   = true;
     private static cleanUpBeforeSave : boolean = true;
+    private static logRotate : string   = "1m";
+    private static rotateOutOfTimestamp : Date = Utils.getRotateTimestampOutOf(Logger.logRotate);
 
     /**
      * output file
@@ -169,6 +171,19 @@ export class Logger implements Loggable{
         Logger.cleanUpBeforeSave = state;
     }
 
+    public static setLogRotate( rotate : string = "1d" ) : void {
+        let date;
+        if((date=Utils.getRotateTimestampOutOf(rotate))){
+            this.rotateOutOfTimestamp = date;
+            return;
+        }
+        this.rotateOutOfTimestamp = null;
+    }
+
+    private static restartRotate( ) : void{
+        this.rotateOutOfTimestamp = Utils.getRotateTimestampOutOf(Logger.logRotate);
+    }
+
     private static translateColorToInt( color : string = "black" ) : String {
        let colors : string[] = [
                     ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -188,6 +203,7 @@ export class Logger implements Loggable{
             date : d.toLocaleDateString( ).replace(/\//g,"-"),
             ms: d.getMilliseconds(), HH:Utils.round(d.getHours()),
             mm: Utils.round(d.getMinutes()), ss: Utils.round(d.getSeconds()),
+            rotate: "."+String(Logger.rotateOutOfTimestamp.getTime()),
             reuse: Logger.logfileReuse
         }).each((value,key)=>{
             filename = filename.replace(new RegExp(`\%${key}`),String(value));
@@ -275,7 +291,10 @@ export class Logger implements Loggable{
               .getList();
 
           if(Logger.saveLog){
-               // implement-logRotate
+               // logRotate
+              if( Logger.rotateOutOfTimestamp && (new Date()).getTime() > Logger.rotateOutOfTimestamp.getTime() ){
+                  Logger.restartRotate();
+              }
                let filename = Logger.getLoggerFileName();
                if(
                    Logger.fileMaxSize===null || ( Logger.fileMaxSize>=0 &&
