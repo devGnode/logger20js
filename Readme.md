@@ -47,7 +47,11 @@ It possible to colorize the output parser like this : `[%hours{blue}] - %type{ye
 - magenta
 - cyan
 - white
+- gray
+- gray
 
+Background color : add `b` like &rarr; `bwhite`
+ 
 :warning: Just one exception only for `%T` and `%type` parser it possible to customize the output color by type of log level [L,E,W,I,D,C] :
 
 - `%T{w?yellow;e?red}` or `%type{w?yellow;e?red}`
@@ -58,7 +62,22 @@ You can define a default color for others log level with `:colorName` annotation
 
 Another example : `%T{e?red;w?yellow;d?blue;l?blue:black}`. The types 'error' will be displayed in red color, 'warning' in yellow and 'debug' and 'log' in blue color and others log level will be displayed in black color into the console.
 
-Since the version`1.1.7` . If you define color in your pattern and you have enabled record in a log file by default the message will be clean up for have readable string. But you can disabled this option just define cleanUpBeforeSave property at false  with `Logger.setCleanUpBeforeSave`. you could not modify this property from your own configuration object.
+Since the version `1.1.7` . If you define color in your pattern and you have enabled record in a log file by default the message will be clean up for have readable string. But you can disabled this option just define cleanUpBeforeSave property at false  with `Logger.setCleanUpBeforeSave`. you could not modify this property from your own configuration object.
+
+Since the version `1.2.0` you can customize the color before call the log method :
+
+```javascript
+import {Logger} from "./Logger";
+
+let myLogger = Logger.factory("test");
+
+myLogger.log( "messageInRed".colorize().red, "messageInBlue".colorize().blue );
+
+let tmp : String = "my foo bar";
+
+console.log( tmp.colorize().yellow );
+
+```
 
 Example of implementation :
 
@@ -276,7 +295,7 @@ Logger.setPropertiesConfigHandle(properties);
 1581273075997	EdgeDriver	: LOG :	webDriver go to = https://google.com/search?q=mdr
 ```
 
-## Express Middleware Logger `> 1.1.7`
+## Express Middleware Logger `> 1.2.0`
 
 parser   | output value   
 ------------ | -------------    
@@ -300,7 +319,7 @@ For define the pattern for express middleware it's the same way that you define 
 
 ## Features & stable version
 
-- 1.1.2 :
+- 1.1.2
     - initial commit
 - 1.1.7
     - 2020-02-10 :
@@ -309,8 +328,10 @@ For define the pattern for express middleware it's the same way that you define 
         - Fix/Add - cleaning message before to save in a log file
 - 1.2.0 
     - 2020-06-10 :
-        - Implementation of Express middleware route logger
-        - Implementation - loader event
+        - Add Express middleware route logger
+        - Implementation - log rotate
+        - Stabilization of the colors functionality
+        - Implementation of a basic loader / \[=====>.... \] 00%
 
 ### From git
 

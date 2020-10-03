@@ -1,5 +1,6 @@
 import "lib-utils-ts/src/globalUtils";
 import { filterLogLevel, Loggable, strLogLevel } from "./Loggable";
+import { Loader } from "./loader";
 export declare class Logger implements Loggable {
     static readonly DEFAULT_LOG_PATTERN_MONO: string;
     static readonly WEBDRIVER_LOG_PATTERN_COLORED: string;
@@ -36,12 +37,12 @@ export declare class Logger implements Loggable {
     private pattern;
     private prop;
     constructor(name?: String);
-    warn(...args: any): void;
-    log(...args: any): void;
-    info(...args: any): void;
-    debug(...args: any): void;
-    error(...args: any): void;
-    custom(...args: any): void;
+    warn(...args: any[]): void;
+    log(...args: any[]): void;
+    info(...args: any[]): void;
+    debug(...args: any[]): void;
+    error(...args: any[]): void;
+    custom(...args: any[]): void;
     setPattern(pattern?: String): Logger;
     setProp(key: string | number, value?: any): Logger;
     static setPropertiesConfigHandle(handle?: any): void;
@@ -98,6 +99,10 @@ export declare class Logger implements Loggable {
      * @param pattern
      */
     static expressRouteLoggerMiddleware(pattern?: string): Function;
+    /***
+     * @param sizeOf
+     */
+    static getLoader(sizeOf?: number): Loader;
     /***
      * @constructor
      * @param name

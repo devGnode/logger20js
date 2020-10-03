@@ -7,6 +7,7 @@ var uuid_1 = require("uuid");
 var Utils_1 = require("./Utils");
 var util_1 = require("util");
 var utils_ts_1 = require("lib-utils-ts/export/utils-ts");
+var loader_1 = require("./loader");
 var Logger = /** @class */ (function () {
     function Logger(name) {
         if (name === void 0) { name = undefined; }
@@ -177,7 +178,9 @@ var Logger = /** @class */ (function () {
             ,
             , , , , , , , , , , , , , , , , , , , , , , , , , , , , ,
             'black', 'red', 'green', 'yellow',
-            'blue', 'magenta', 'cyan', 'white', 'gray', 'grey', 'bblack', 'bred', 'bgreen'
+            'blue', 'magenta', 'cyan', 'white', 'gray', 'grey',
+            'bblack', 'bred', 'bgreen', 'byellow', 'bblue', 'bmagenta',
+            'bcyan', 'cwhite', 'cgray', 'cgrey'
         ];
         return colors.indexOf(color) > -1 ? String(colors.indexOf(color)) : "30";
     };
@@ -331,6 +334,15 @@ var Logger = /** @class */ (function () {
             date = _d.toISOString();
             next();
         };
+    };
+    /***
+     * @param sizeOf
+     */
+    Logger.getLoader = function (sizeOf) {
+        if (sizeOf === void 0) { sizeOf = 0; }
+        if (!loader_1.Loader.loaderIsBusy())
+            return new loader_1.Loader(sizeOf);
+        return null;
     };
     /***
      * @constructor

@@ -1,8 +1,14 @@
 import {Logger} from "./Logger";
+import {Colorize} from "./Colorize";
 
 export type filterLogLevel<T> = String[] | [ ... T[] ]
 export type strLogLevel = "ALL" |"LOG" | "DEBUG" | "ERROR" | "INFO" | "CUSTOM" | "WARN"
 
+declare global{
+   interface String {
+       colorize( ) : Colorize
+   }
+}
 export interface Loggable{
     warn( ... args : any[] ) :void
     log( ... args : any[] ) : void

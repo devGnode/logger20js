@@ -6,6 +6,7 @@ import {format} from "util";
 import {HashMap,List,ArrayList} from "lib-utils-ts/export/utils-ts";
 import {ascii} from "lib-utils-ts/src/Interface";
 import {filterLogLevel, Loggable, strLogLevel} from "./Loggable";
+import {Loader} from "./loader";
 
 export class Logger implements Loggable{
 
@@ -67,27 +68,27 @@ export class Logger implements Loggable{
         this.name = name;
     }
 
-    public warn( ... args : any ) : void {
+    public warn( ... args : any[] ) : void {
         Logger.stdout.apply(null,["warn",this.pattern,this.prop,this.name].concat(Array.from(arguments)));
     }
 
-    public log( ... args : any ) : void {
+    public log( ... args : any[] ) : void {
         Logger.stdout.apply(null,["log",this.pattern,this.prop,this.name].concat(Array.from(arguments)));
     }
 
-    public info( ... args : any ) : void {
+    public info( ... args : any[] ) : void {
         Logger.stdout.apply(null,["info",this.pattern,this.prop,this.name].concat(Array.from(arguments)));
     }
 
-    public debug( ... args : any ) : void {
+    public debug( ... args : any[] ) : void {
         Logger.stdout.apply(null,["debug",this.pattern,this.prop,this.name].concat(Array.from(arguments)));
     }
 
-    public error( ... args : any ) : void {
+    public error( ... args : any[] ) : void {
         Logger.stdout.apply(null,["error",this.pattern,this.prop,this.name].concat(Array.from(arguments)));
     }
 
-    public custom( ... args : any ) : void {
+    public custom( ... args : any[] ) : void {
         let tmp = Logger.parser;
         Logger.parser = Logger.parser.replace(/\%error/g,"\r\n%error");
         Logger.stdout.apply(null,["custom",this.pattern,this.prop,this.name].concat(Array.from(arguments)));
@@ -188,7 +189,9 @@ export class Logger implements Loggable{
        let colors : string[] = [
                     ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
                     'black','red','green','yellow',
-                    'blue','magenta','cyan','white','gray','grey','bblack','bred','bgreen'
+                    'blue','magenta','cyan','white','gray','grey',
+                    'bblack','bred','bgreen','byellow','bblue','bmagenta',
+                    'bcyan','cwhite','cgray','cgrey'
                     ];
        return colors.indexOf(color)>-1? String(colors.indexOf(color)):"30";
     }
