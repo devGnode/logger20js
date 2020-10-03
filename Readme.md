@@ -1,6 +1,6 @@
 # logger20js-ts
 
-<img src="https://img.shields.io/badge/Git version-1.1.7-yellowgreen"/> <img src="https://img.shields.io/github/languages/top/devGnode/logger20js"/> <img src="https://img.shields.io/badge/Javascript-ES2020-yellow"/> <img src="https://img.shields.io/npm/v/logger20js-ts"/> <img src="https://img.shields.io/node/v/logger20js-ts"/> <img src="https://img.shields.io/appveyor/build/devGnode/logger20js-ts"/> <img src="https://ci.appveyor.com/api/projects/status/github/devGnode/logger20js?svg=true&branch=develop"/>
+<img src="https://img.shields.io/badge/Git version-1.2.0-yellowgreen"/> <img src="https://img.shields.io/github/languages/top/devGnode/logger20js"/> <img src="https://img.shields.io/badge/Javascript-ES2020-yellow"/> <img src="https://img.shields.io/npm/v/logger20js-ts"/> <img src="https://img.shields.io/node/v/logger20js-ts"/> <img src="https://img.shields.io/appveyor/build/devGnode/logger20js-ts"/> <img src="https://ci.appveyor.com/api/projects/status/github/devGnode/logger20js?svg=true&branch=develop"/>
 
 Logger20js-ts is a little basic framework Logger for nodeJs or typescript project. It was written in typescript language.
  
@@ -25,7 +25,7 @@ hours       | format type &rarr; HH:mm:ss
 HH          | hours number type
 mm          | minutes number type
 ss          | seconds number type
-error  message      | log message
+error     | log message
 message     | log message
 
 The default pattern look like to `%time\\t%name\\t: %type :\\t%error`.
@@ -35,6 +35,7 @@ static property   | value
 :------------ | -------------  
 DEFAULT_LOG_PATTERN_MONO        |  %time\t%name\t: %type :\t%error |
 WEBDRIVER_LOG_PATTERN_COLORED   |   "[%hours{cyan}] %T{w?yellow}/%name - %error" |
+EXPRESS_MIDDLEWARE_PATTERN      |   
 
 It possible to colorize the output parser like this : `[%hours{blue}] - %type{yellow} - %error`, and below there is the list of accepted colors :
 
@@ -244,14 +245,40 @@ Logger.setPropertiesConfigHandle(properties);
 1581273074148	EdgeDriver	: LOG :	webDriver go to = https://google.com
 1581273075997	EdgeDriver	: LOG :	webDriver go to = https://google.com/search?q=mdr
 ```
+
+### Express Middleware Logger `> 1.1.7`
+
+parser   | output value   
+------------ | -------------    
+protocol           |  http or https
+host        | Req hostanme
+method      | Http query method
+url         | Url Endpoint
+remoteAddr  | Client ip
+reuse       | allow reuse of an existing log file
+originalUrl | express req.originalUrl
+elapsedTime | time gap between two query
+
+```javascript
+const app = express();
+
+app.use(Logger.expressRouteLoggerMiddleware());
+
+````
+- expressRouteLoggerMiddleware( \[, pattern : stirng = null \] ) : Callback
+
+For define the pattern for express middleware it's the same way that you define the pattern for the Logger just you can add these propoerties for him
+
 ## Features
 
- - 2020-02-10 :
-    - Fix - removing of the Stream.js file, this extension creates conflicts with many other node js libraries like, Protractor, Selenium, resulting in an exception of the native Stream object.
-    - integration of background color in cli
- - 2020-03-10 :    
-    - Fix/Add . cleaning up message before to save in a log file
- 
+- 1.1.4-5-7
+    - 2020-02-10 :
+        - Fix - removing of the Stream.js file, this extension creates conflicts with many other node js libraries like, Protractor, Selenium, resulting in an exception of the native Stream object.
+        - Integration of background color in cli  
+        - Fix/Add - cleaning message before to save in a log file
+- 1.1.8 
+    - 2020-03-10 :
+        - Implementation of Express middleware route logger
 
 ### From git
 

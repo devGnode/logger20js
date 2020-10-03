@@ -21,4 +21,7 @@ export declare class Utils {
      * @return {boolean}
      */
     static existsDir(directory?: string): Boolean;
+    static merge(objA?: Object, objB?: Object): Object;
+    static repeat(value?: string, loop?: number): string;
+    static parseTime(timeStamp?: number): string;
 }

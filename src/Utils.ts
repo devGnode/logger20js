@@ -1,6 +1,7 @@
 "use strict";
 
 import {mkdirSync, statSync, writeFileSync} from "fs";
+import {format} from "util";
 
 export class Utils{
 
@@ -57,7 +58,7 @@ export class Utils{
      * @param directory
      * @return {boolean}
      */
-    public static existsDir( directory : string = "" ) : Boolean {
+    public static existsDir( directory : string = null ) : Boolean {
         try {
             statSync(directory);
             return true;
@@ -66,4 +67,35 @@ export class Utils{
         }
     }
 
+    public static merge( objA : Object = {}, objB : Object = {} ) : Object{
+        try{
+            for( let tmp in objB )if( !objA[tmp] ) objA[tmp] = objB[tmp];
+        }catch (e) {
+            return objA;
+        }
+        return objA;
+    }
+
+    public static repeat( value :string = "", loop : number = 0 ){
+        return new Array(loop).fill(value).join("");
+    }
+
+    public static parseTime( timeStamp : number = 0 ) : string {
+        let h:number,m:number,s:number,ms:number;
+        if(timeStamp<1000) return "0."+timeStamp;
+        else{
+            ms = timeStamp/1000;
+            h  = Math.floor((ms)/3600);
+            m = Math.floor((ms)/60)-(3600*h);
+            s = Math.floor( ms %60);
+            ms = Math.round(ms);
+        }
+        return  format(
+            "%s%s%s%s",
+            ( h>0?Utils.round(h)+":":""),
+            m>0?Utils.round(m)+":":"",
+            s>0?Utils.round(s)+".":"",
+            Utils.repeat("0",3-String(ms).length)+ms
+        );
+    }
 }
