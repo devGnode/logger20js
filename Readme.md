@@ -124,6 +124,8 @@ Logger.level(["INFO","WARN"]);
 
 Only INFO and WARN log will be displayed to the console or recorded.
 
+for remove or add just one log level type using : `Logger.popLevel("ALL")` or `Logger.pushLevel("ALL")`
+
 ### Active log recorder
 
 By default this property is : `true`
@@ -171,6 +173,8 @@ If you want use the `reuse` option in your pattern for your log filename, make s
 - setSaveLog( saveInFile : ***boolean*** ) : void
 - setLogStdout( stout : ***boolean*** ) : void
 - level( level : ***Array*** ) : void
+- popLevel( logType : ***strLogLevel***  ) : void
+- pushLevel( logType : ****strLogLevel*** ) : void
 - setLogFilePattern( pattern : ***String*** ) : void
 - setFileMaxSize( bytes : ***Number*** ) : void
 - <s>setLogFileReuse</s>( fileName : ***string*** ) : void
@@ -262,7 +266,6 @@ host        | Req hostanme
 method      | Http query method
 url         | Url Endpoint
 remoteAddr  | Client ip
-reuse       | allow reuse of an existing log file
 originalUrl | express req.originalUrl
 elapsedTime | time gap between two query
 
