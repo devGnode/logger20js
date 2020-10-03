@@ -35,7 +35,7 @@ static property   | value
 :------------ | -------------  
 DEFAULT_LOG_PATTERN_MONO        |  %time\t%name\t: %type :\t%error |
 WEBDRIVER_LOG_PATTERN_COLORED   |   "[%hours{cyan}] %T{w?yellow}/%name - %error" |
-EXPRESS_MIDDLEWARE_PATTERN      |   
+EXPRESS_MIDDLEWARE_PATTERN      |   "[%hours{yellow}] %name %protocol{red} - %method %url +%elapsedTime{yellow}"
 
 It possible to colorize the output parser like this : `[%hours{blue}] - %type{yellow} - %error`, and below there is the list of accepted colors :
 
@@ -265,9 +265,10 @@ const app = express();
 app.use(Logger.expressRouteLoggerMiddleware());
 
 ````
-- expressRouteLoggerMiddleware( \[, pattern : stirng = null \] ) : Callback
+- expressRouteLoggerMiddleware( \[, pattern : string = null \] ) : Callback
 
-For define the pattern for express middleware it's the same way that you define the pattern for the Logger just you can add these propoerties for him
+For define the pattern for express middleware it's the same way that you define the pattern for the Logger just you can add these properties for him.
+
 
 ## Features
 
