@@ -24,7 +24,7 @@ export class Logger implements Loggable{
     private static logLevel  : filterLogLevel<strLogLevel> = ["ALL"];
     private static colorize : boolean   = true;
     private static cleanUpBeforeSave : boolean = true;
-    private static logRotate : string   = "1m";
+    private static logRotate : string   = null;
     private static rotateOutOfTimestamp : Date = Utils.getRotateTimestampOutOf(Logger.logRotate);
 
     /**
@@ -203,7 +203,7 @@ export class Logger implements Loggable{
             date : d.toLocaleDateString( ).replace(/\//g,"-"),
             ms: d.getMilliseconds(), HH:Utils.round(d.getHours()),
             mm: Utils.round(d.getMinutes()), ss: Utils.round(d.getSeconds()),
-            rotate: "."+String(Logger.rotateOutOfTimestamp.getTime()),
+            rotate: "."+(String(Logger.rotateOutOfTimestamp?.getTime())||"null"),
             reuse: Logger.logfileReuse
         }).each((value,key)=>{
             filename = filename.replace(new RegExp(`\%${key}`),String(value));

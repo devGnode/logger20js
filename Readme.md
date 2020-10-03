@@ -162,8 +162,10 @@ If you want use the `reuse` option in your pattern for your log filename, make s
 
 ### Log rotate
 
-If you want enabled rotate log define in your pattern filename `%rotate`.
-Rotate pattern :
+If you want enabled log rotate define in your pattern filename `%rotate` parser.
+`%rotate` value is an overflow timestamp 32 bits. By default log rotate is disabled.
+
+Some rotate example :
 
 + 5d &rarr; 5 days
 + 1h &rarr; 1 hour
@@ -175,8 +177,6 @@ Rotate pattern :
 Logger.setLogFilePattern("%id%rotate");
 Logger.setLogRotate("1d"); // new log file every day
 ````
-
-by default log rotate is disabled. Rotate value is an overflow timestamp 32 bits
 
 ### static access
 

@@ -184,13 +184,14 @@ var Logger = /** @class */ (function () {
     /***
      */
     Logger.getLoggerFileName = function () {
+        var _a;
         var d = new Date(), filename = Logger.fileNamePattern;
         utils_ts_1.HashMap.of({
             id: Logger.oid,
             date: d.toLocaleDateString().replace(/\//g, "-"),
             ms: d.getMilliseconds(), HH: Utils_1.Utils.round(d.getHours()),
             mm: Utils_1.Utils.round(d.getMinutes()), ss: Utils_1.Utils.round(d.getSeconds()),
-            rotate: "." + String(Logger.rotateOutOfTimestamp.getTime()),
+            rotate: "." + (String((_a = Logger.rotateOutOfTimestamp) === null || _a === void 0 ? void 0 : _a.getTime()) || "null"),
             reuse: Logger.logfileReuse
         }).each(function (value, key) {
             filename = filename.replace(new RegExp("%" + key), String(value));
@@ -353,7 +354,7 @@ var Logger = /** @class */ (function () {
     Logger.logLevel = ["ALL"];
     Logger.colorize = true;
     Logger.cleanUpBeforeSave = true;
-    Logger.logRotate = "1m";
+    Logger.logRotate = null;
     Logger.rotateOutOfTimestamp = Utils_1.Utils.getRotateTimestampOutOf(Logger.logRotate);
     /**
      * output file
