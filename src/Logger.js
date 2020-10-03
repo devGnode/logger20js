@@ -7,7 +7,6 @@ var uuid_1 = require("uuid");
 var Utils_1 = require("./Utils");
 var util_1 = require("util");
 var utils_ts_1 = require("lib-utils-ts/export/utils-ts");
-var loader_1 = require("./loader");
 var Logger = /** @class */ (function () {
     function Logger(name) {
         if (name === void 0) { name = undefined; }
@@ -315,13 +314,6 @@ var Logger = /** @class */ (function () {
             date = _d.toISOString();
             next();
         };
-    };
-    /***
-     * @param size
-     */
-    Logger.getLoader = function (size) {
-        if (size === void 0) { size = 0; }
-        return loader_1.Loader.getInstance();
     };
     /***
      * @constructor

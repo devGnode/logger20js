@@ -1,5 +1,4 @@
 import "lib-utils-ts/src/globalUtils";
-import { Loader } from "./loader";
 import { filterLogLevel, Loggable, strLogLevel } from "./Loggable";
 export declare class Logger implements Loggable {
     static readonly DEFAULT_LOG_PATTERN_MONO: string;
@@ -95,10 +94,6 @@ export declare class Logger implements Loggable {
      * @param pattern
      */
     static expressRouteLoggerMiddleware(pattern?: string): Function;
-    /***
-     * @param size
-     */
-    static getLoader(size?: number): Loader;
     /***
      * @constructor
      * @param name
