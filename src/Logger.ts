@@ -6,7 +6,6 @@ import {format} from "util";
 import {HashMap,List,ArrayList} from "lib-utils-ts/export/utils-ts";
 import {ascii} from "lib-utils-ts/src/Interface";
 import {filterLogLevel, Loggable, strLogLevel} from "./Loggable";
-import {Loader} from "./loader";
 
 export class Logger implements Loggable{
 
