@@ -7,6 +7,7 @@ var uuid_1 = require("uuid");
 var Utils_1 = require("./Utils");
 var util_1 = require("util");
 var utils_ts_1 = require("lib-utils-ts/export/utils-ts");
+var loader_1 = require("./loader");
 var Logger = /** @class */ (function () {
     function Logger(name) {
         if (name === void 0) { name = undefined; }
@@ -108,13 +109,32 @@ var Logger = /** @class */ (function () {
         if (stdout === void 0) { stdout = true; }
         Logger.logStdout = stdout;
     };
+    /***
+     * @deprecated
+     */
     Logger.setParser = function (parsing) {
         if (parsing === void 0) { parsing = Logger.DEFAULT_LOG_PATTERN_MONO; }
         Logger.parser = parsing;
     };
+    Logger.setPattern = function (pattern) {
+        if (pattern === void 0) { pattern = Logger.DEFAULT_LOG_PATTERN_MONO; }
+        Logger.parser = pattern;
+    };
     Logger.level = function (level) {
         if (level === void 0) { level = ["ALL"]; }
         Logger.logLevel = level;
+    };
+    Logger.popLevel = function (logType) {
+        if (logType === void 0) { logType = "ALL"; }
+        var tmp;
+        if ((tmp = this.logLevel.indexOf(logType)) > -1) {
+            this.logLevel = this.logLevel.slice(0, tmp).concat(this.logLevel.slice(tmp + 1, this.logLevel.length));
+        }
+    };
+    Logger.pushLevel = function (logType) {
+        if (logType === void 0) { logType = "ALL"; }
+        if (this.logLevel.indexOf(logType) === -1)
+            this.logLevel.push(logType);
     };
     Logger.setLogFilePattern = function (pattern) {
         if (pattern === void 0) { pattern = Logger.fileNamePattern; }
@@ -234,7 +254,6 @@ var Logger = /** @class */ (function () {
                     out.add(Logger.colorizeString(message, type, false)); // cleanUp
                 out.add(Logger.colorizeString(message, type, Logger.colorize));
             }
-            //let name = args.shift();
             out = out.stream()
                 .map(function (value) { return Logger.parseString(value, type, name, prop); })
                 /***
@@ -285,17 +304,24 @@ var Logger = /** @class */ (function () {
         var logger = Logger.factory("ExpressRoute").setPattern(pattern || Logger.EXPRESS_MIDDLEWARE_PATTERN), date = new Date().toISOString();
         return function (req, res, next) {
             var _d = new Date();
-            logger.setProp("protocol", req.protocol)
-                .setProp("host", req.host)
-                .setProp("port", req.port)
-                .setProp("method", req.method)
-                .setProp("url", req.url)
-                .setProp("remoteAddr", req.connection.remoteAddress)
-                .setProp("elapsedTime", Utils_1.Utils.parseTime(_d.getTime() - new Date(date).getTime()))
+            logger.setProp("protocol", req.protocol || undefined)
+                .setProp("host", req.host || undefined)
+                .setProp("port", req.port || undefined)
+                .setProp("method", req.method.toUpperCase() || undefined)
+                .setProp("url", req.url || undefined)
+                .setProp("remoteAddr", req.connection.remoteAddress || undefined)
+                .setProp("elapsedTime", Utils_1.Utils.parseTime(_d.getTime() - new Date(date).getTime()) || undefined)
                 .log();
             date = _d.toISOString();
             next();
         };
+    };
+    /***
+     * @param size
+     */
+    Logger.getLoader = function (size) {
+        if (size === void 0) { size = 0; }
+        return loader_1.Loader.getInstance();
     };
     /***
      * @constructor

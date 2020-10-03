@@ -85,7 +85,7 @@ output :
 
 ```javascript
 const {Logger}  = require("logger20js-ts");
-Logger.setParser("[%HH:%mm:%ss] %T/%name - %error");
+Logger.setPattern("[%HH:%mm:%ss] %T/%name - %error");
 
 class MyClass{
     
@@ -124,10 +124,17 @@ Logger.level(["INFO","WARN"]);
 
 Only INFO and WARN log will be displayed to the console or recorded.
 
-### Set path to the log file
+### Active log recorder
+
+By default this property is : `true`
 
 ```javascript
-Logger.setSaveLog(true);
+Logger.setSaveLog( true );
+````
+
+### Define a log file directory
+
+```javascript
 Logger.setOutputLog(process.cwd()+"/logs");
 ````
 
@@ -148,7 +155,7 @@ reuse        | allow reuse of an existing log file
 Logger.setLogFilePattern("environment-%date-%id");
 ````
 
-If you want use the `reuse` pattern in your logger filename, make sure you have defined the reuse filename `Logger.setLogFileReuse` without define the extension `.log` in the filename.
+If you want use the `reuse` option in your pattern for your log filename, make sure you have defined the reuse filename with `Logger.setLogFileReuse` without define the extension `.log` in the filename. But this method will be deprecated in the future release, just define your existing log file on your pattern with `setLogFilePattern`.
 
 ### static access
 
@@ -158,15 +165,15 @@ If you want use the `reuse` pattern in your logger filename, make sure you have 
 
 #### Configuration
 
-- setParser( parser : ***String*** ) : void 
+- <s>setParser</s>( parser : ***String*** ) : void
+- setPattern( parser : ***String*** ) : void
 - setOutputLog( path : ***string*** ) : void
 - setSaveLog( saveInFile : ***boolean*** ) : void
 - setLogStdout( stout : ***boolean*** ) : void
 - level( level : ***Array*** ) : void
 - setLogFilePattern( pattern : ***String*** ) : void
 - setFileMaxSize( bytes : ***Number*** ) : void
-- setLogFilePattern( path : ***String*** ) : void
-- setLogFileReuse( fileName : ***string*** ) : void
+- <s>setLogFileReuse</s>( fileName : ***string*** ) : void
 - setColorize( status : ***boolean*** ) : void
 - setCleanUpBeforeSave( status : ***boolean*** ) : void *( default true )*
 
@@ -246,7 +253,7 @@ Logger.setPropertiesConfigHandle(properties);
 1581273075997	EdgeDriver	: LOG :	webDriver go to = https://google.com/search?q=mdr
 ```
 
-### Express Middleware Logger `> 1.1.7`
+## Express Middleware Logger `> 1.1.7`
 
 parser   | output value   
 ------------ | -------------    
@@ -265,14 +272,15 @@ const app = express();
 app.use(Logger.expressRouteLoggerMiddleware());
 
 ````
-- expressRouteLoggerMiddleware( \[, pattern : string = null \] ) : Callback
+- expressRouteLoggerMiddleware( \[ void , pattern : string = null \] ) : Callback
 
 For define the pattern for express middleware it's the same way that you define the pattern for the Logger just you can add these properties for him.
 
+## Features & stable version
 
-## Features
-
-- 1.1.4-5-7
+- 1.1.2 :
+    - initial commit
+- 1.1.7
     - 2020-02-10 :
         - Fix - removing of the Stream.js file, this extension creates conflicts with many other node js libraries like, Protractor, Selenium, resulting in an exception of the native Stream object.
         - Integration of background color in cli  
@@ -280,6 +288,7 @@ For define the pattern for express middleware it's the same way that you define 
 - 1.1.8 
     - 2020-03-10 :
         - Implementation of Express middleware route logger
+        - Implementation - loader event
 
 ### From git
 

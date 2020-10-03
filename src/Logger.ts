@@ -5,12 +5,9 @@ import {Utils} from "./Utils";
 import {format} from "util";
 import {HashMap,List,ArrayList} from "lib-utils-ts/export/utils-ts";
 import {ascii} from "lib-utils-ts/src/Interface";
+import {filterLogLevel, Loggable, strLogLevel} from "./Loggable";
 
-
-type filterLogLevel<T> = String[] | [ ... T[] ]
-type strLogLevel = "ALL" |"LOG" | "DEBUG" | "ERROR" | "INFO" | "CUSTOM"
-
-export class Logger{
+export class Logger implements Loggable{
 
     public static readonly DEFAULT_LOG_PATTERN_MONO        : string = "%time\t%name\t: %type :\t%error";
     public static readonly WEBDRIVER_LOG_PATTERN_COLORED   : string = "[%hours{cyan}] %T{w?yellow;e?red}/%name - %error";
@@ -122,12 +119,30 @@ export class Logger{
         Logger.logStdout = stdout;
     }
 
+    /***
+     * @deprecated
+     */
     public static setParser( parsing : String = Logger.DEFAULT_LOG_PATTERN_MONO ) : void {
         Logger.parser = parsing;
     }
 
+    public static setPattern( pattern : String = Logger.DEFAULT_LOG_PATTERN_MONO ) : void {
+        Logger.parser = pattern;
+    }
+
     public static level( level : filterLogLevel<strLogLevel> = ["ALL"] ) : void {
         Logger.logLevel = level;
+    }
+
+    public static popLevel( logType : strLogLevel = "ALL" ){
+        let tmp;
+        if((tmp=this.logLevel.indexOf(logType))>-1){
+            this.logLevel = this.logLevel.slice(0,tmp).concat(this.logLevel.slice(tmp+1,this.logLevel.length));
+        }
+    }
+
+    public static pushLevel( logType : strLogLevel = "ALL" ){
+        if(this.logLevel.indexOf(logType)===-1)this.logLevel.push(logType);
     }
 
     public static setLogFilePattern( pattern : String = Logger.fileNamePattern ) : void {
@@ -250,7 +265,6 @@ export class Logger{
                 out.add(Logger.colorizeString(message, type, Logger.colorize));
             }
 
-          //let name = args.shift();
           out = out.stream()
               .map(value=>Logger.parseString(value,type,name,prop))
               /***
@@ -260,7 +274,7 @@ export class Logger{
               .map(value=>value.replace(/\%error|\%message/gi,format.apply(null,args)))
               .getList();
 
-           if(Logger.saveLog){
+          if(Logger.saveLog){
                // implement-logRotate
                let filename = Logger.getLoggerFileName();
                if(
@@ -271,7 +285,7 @@ export class Logger{
                        Utils.writeLog(Logger.outputLog, filename, out.get(0) );
                    }catch (e) {console.warn(e);}
                }
-           }
+          }
             if(Logger.logStdout) {
                 message = out.get( out.size()>1? 1 : 0 );
                 if(Logger.pipeStdout!==null) Logger.pipeStdout?.write.call(null,message); else {
@@ -300,13 +314,13 @@ export class Logger{
             date   = new Date().toISOString();
         return (req,res,next) => {
             let _d = new Date();
-            logger.setProp("protocol",req.protocol)
-                .setProp("host",req.host )
-                .setProp("port",req.port)
-                .setProp("method",req.method)
-                .setProp("url",req.url)
-                .setProp("remoteAddr", req.connection.remoteAddress)
-                .setProp("elapsedTime", Utils.parseTime(_d.getTime()-new Date(date).getTime()))
+            logger.setProp("protocol",req.protocol||undefined)
+                .setProp("host",req.host||undefined)
+                .setProp("port",req.port||undefined)
+                .setProp("method",req.method.toUpperCase()||undefined)
+                .setProp("url",req.url||undefined)
+                .setProp("remoteAddr", req.connection.remoteAddress||undefined)
+                .setProp("elapsedTime", Utils.parseTime(_d.getTime()-new Date(date).getTime())||undefined)
                 .log();
             date = _d.toISOString();
             next();

@@ -1,7 +1,7 @@
 import "lib-utils-ts/src/globalUtils";
-declare type filterLogLevel<T> = String[] | [...T[]];
-declare type strLogLevel = "ALL" | "LOG" | "DEBUG" | "ERROR" | "INFO" | "CUSTOM";
-export declare class Logger {
+import { Loader } from "./loader";
+import { filterLogLevel, Loggable, strLogLevel } from "./Loggable";
+export declare class Logger implements Loggable {
     static readonly DEFAULT_LOG_PATTERN_MONO: string;
     static readonly WEBDRIVER_LOG_PATTERN_COLORED: string;
     static readonly EXPRESS_MIDDLEWARE_PATTERN: string;
@@ -47,8 +47,14 @@ export declare class Logger {
     static setOutputLog(path?: string): void;
     static setSaveLog(save?: boolean): void;
     static setLogStdout(stdout?: boolean): void;
+    /***
+     * @deprecated
+     */
     static setParser(parsing?: String): void;
+    static setPattern(pattern?: String): void;
     static level(level?: filterLogLevel<strLogLevel>): void;
+    static popLevel(logType?: strLogLevel): void;
+    static pushLevel(logType?: strLogLevel): void;
     static setLogFilePattern(pattern?: String): void;
     static setFileMaxSize(bytes?: number): void;
     static setLogFileReuse(path?: String): void;
@@ -90,9 +96,12 @@ export declare class Logger {
      */
     static expressRouteLoggerMiddleware(pattern?: string): Function;
     /***
+     * @param size
+     */
+    static getLoader(size?: number): Loader;
+    /***
      * @constructor
      * @param name
      */
     static factory(name?: String): Logger;
 }
-export {};
