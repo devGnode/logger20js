@@ -79,7 +79,7 @@ console.log( tmp.colorize().yellow );
 
 ```
 
-Example of implementation :
+## Example of basic implementation :
 
 ```javascript
 const {Logger}     = require("logger20js-ts");
@@ -317,6 +317,20 @@ app.use(Logger.expressRouteLoggerMiddleware());
 
 For define the pattern for express middleware it's the same way that you define the pattern for the Logger just you can add these properties for him.
 
+## Loader `> 1.2.0`
+
+```javascript
+
+let loader : Loader = Logger.getLoader(30).start("Ending message");
+
+setInterval(()=>{  
+    loader.add(1);
+},1000);
+
+````
+
+- end() : ***void***
+
 ## Features & stable version
 
 - 1.1.2
@@ -331,9 +345,9 @@ For define the pattern for express middleware it's the same way that you define 
         - Add Express middleware route logger
         - Implementation - log rotate
         - Stabilization of the colors functionality
-        - Implementation of a basic loader / \[=====>.... \] 00%
+        - Implementation of a basic loader feature / \[=====>.... \] 00%
 
-### From git
+## From git
 
 ``
 $ git clone https://github.com/devGnode/logger20js.git
