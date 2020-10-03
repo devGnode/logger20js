@@ -295,7 +295,7 @@ Logger.setPropertiesConfigHandle(properties);
 1581273075997	EdgeDriver	: LOG :	webDriver go to = https://google.com/search?q=mdr
 ```
 
-## Express Middleware Logger `> 1.2.0`
+## Express Middleware Logger `>= 1.2.0`
 
 parser   | output value   
 ------------ | -------------    
@@ -317,7 +317,7 @@ app.use(Logger.expressRouteLoggerMiddleware());
 
 For define the pattern for express middleware it's the same way that you define the pattern for the Logger just you can add these properties for him.
 
-## Loader `> 1.2.0`
+## Loader `>= 1.2.0`
 
 ```javascript
 
