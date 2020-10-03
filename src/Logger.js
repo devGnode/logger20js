@@ -15,6 +15,7 @@ var Logger = /** @class */ (function () {
          */
         this.name = null;
         this.pattern = null;
+        this.prop = null;
         /***
          * Rewrite Logger configuration
          * getProperty :
@@ -39,35 +40,35 @@ var Logger = /** @class */ (function () {
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        Logger.stdout.apply(null, ["warn", this.pattern, this.name].concat(Array.from(arguments)));
+        Logger.stdout.apply(null, ["warn", this.pattern, this.prop, this.name].concat(Array.from(arguments)));
     };
     Logger.prototype.log = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        Logger.stdout.apply(null, ["log", this.pattern, this.name].concat(Array.from(arguments)));
+        Logger.stdout.apply(null, ["log", this.pattern, this.prop, this.name].concat(Array.from(arguments)));
     };
     Logger.prototype.info = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        Logger.stdout.apply(null, ["info", this.pattern, this.name].concat(Array.from(arguments)));
+        Logger.stdout.apply(null, ["info", this.pattern, this.prop, this.name].concat(Array.from(arguments)));
     };
     Logger.prototype.debug = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        Logger.stdout.apply(null, ["debug", this.pattern, this.name].concat(Array.from(arguments)));
+        Logger.stdout.apply(null, ["debug", this.pattern, this.prop, this.name].concat(Array.from(arguments)));
     };
     Logger.prototype.error = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        Logger.stdout.apply(null, ["error", this.pattern, this.name].concat(Array.from(arguments)));
+        Logger.stdout.apply(null, ["error", this.pattern, this.prop, this.name].concat(Array.from(arguments)));
     };
     Logger.prototype.custom = function () {
         var args = [];
@@ -76,12 +77,19 @@ var Logger = /** @class */ (function () {
         }
         var tmp = Logger.parser;
         Logger.parser = Logger.parser.replace(/\%error/g, "\r\n%error");
-        Logger.stdout.apply(null, ["custom", this.pattern, this.name].concat(Array.from(arguments)));
+        Logger.stdout.apply(null, ["custom", this.pattern, this.prop, this.name].concat(Array.from(arguments)));
         Logger.parser = tmp;
     };
     Logger.prototype.setPattern = function (pattern) {
         if (pattern === void 0) { pattern = ""; }
         this.pattern = pattern;
+        return this;
+    };
+    Logger.prototype.setProp = function (key, value) {
+        if (value === void 0) { value = null; }
+        if (!this.prop)
+            this.prop = {};
+        this.prop[key] = value;
         return this;
     };
     Logger.setPropertiesConfigHandle = function (handle) {
@@ -100,13 +108,32 @@ var Logger = /** @class */ (function () {
         if (stdout === void 0) { stdout = true; }
         Logger.logStdout = stdout;
     };
+    /***
+     * @deprecated
+     */
     Logger.setParser = function (parsing) {
         if (parsing === void 0) { parsing = Logger.DEFAULT_LOG_PATTERN_MONO; }
         Logger.parser = parsing;
     };
+    Logger.setPattern = function (pattern) {
+        if (pattern === void 0) { pattern = Logger.DEFAULT_LOG_PATTERN_MONO; }
+        Logger.parser = pattern;
+    };
     Logger.level = function (level) {
         if (level === void 0) { level = ["ALL"]; }
         Logger.logLevel = level;
+    };
+    Logger.popLevel = function (logType) {
+        if (logType === void 0) { logType = "ALL"; }
+        var tmp;
+        if ((tmp = this.logLevel.indexOf(logType)) > -1) {
+            this.logLevel = this.logLevel.slice(0, tmp).concat(this.logLevel.slice(tmp + 1, this.logLevel.length));
+        }
+    };
+    Logger.pushLevel = function (logType) {
+        if (logType === void 0) { logType = "ALL"; }
+        if (this.logLevel.indexOf(logType) === -1)
+            this.logLevel.push(logType);
     };
     Logger.setLogFilePattern = function (pattern) {
         if (pattern === void 0) { pattern = Logger.fileNamePattern; }
@@ -190,20 +217,22 @@ var Logger = /** @class */ (function () {
      * @param message
      * @param type
      * @param name
+     * @param dat
      */
-    Logger.parseString = function (message, type, name) {
+    Logger.parseString = function (message, type, name, dat) {
         if (message === void 0) { message = null; }
         if (type === void 0) { type = null; }
         if (name === void 0) { name = null; }
+        if (dat === void 0) { dat = null; }
         var d = new Date(), h = Utils_1.Utils.round(d.getHours()), m = Utils_1.Utils.round(d.getMinutes()), s = Utils_1.Utils.round(d.getSeconds()), ss = d.getMilliseconds();
-        utils_ts_1.HashMap.of({
+        utils_ts_1.HashMap.of(Utils_1.Utils.merge({
             type: type,
             name: name,
             time: d.getTime(),
             hours: util_1.format("%s:%s:%s", h, m, s),
             ms: ss, HH: h, mm: m, ss: s,
             T: type.substr(0, 1).toUpperCase()
-        }).each(function (value, key) {
+        }, dat || {})).each(function (value, key) {
             // @ts-ignore
             message = Utils_1.Utils.regExp(new RegExp("%" + key), message, function () { return value.toString(); });
         });
@@ -214,7 +243,7 @@ var Logger = /** @class */ (function () {
      */
     Logger.stdout = function () {
         var _a;
-        var args = Array.from(arguments), type = args.shift().toUpperCase(), message = args.shift() || Logger.parser, out = new utils_ts_1.ArrayList();
+        var args = Array.from(arguments), type = args.shift().toUpperCase(), message = args.shift() || Logger.parser, prop = args.shift(), name = args.shift(), out = new utils_ts_1.ArrayList();
         if (Logger.logLevel.indexOf(type.toUpperCase()) > -1 || Logger.logLevel.indexOf("ALL") > -1) {
             // cast Object to String
             args.map(function (value) { return (typeof value).equals("object") ? JSON.stringify(value) : value; });
@@ -224,9 +253,8 @@ var Logger = /** @class */ (function () {
                     out.add(Logger.colorizeString(message, type, false)); // cleanUp
                 out.add(Logger.colorizeString(message, type, Logger.colorize));
             }
-            var name_1 = args.shift();
             out = out.stream()
-                .map(function (value) { return Logger.parseString(value, type, name_1); })
+                .map(function (value) { return Logger.parseString(value, type, name, prop); })
                 /***
                  * replace message log here avoid
                  * regexp fall in infinite loop
@@ -259,6 +287,35 @@ var Logger = /** @class */ (function () {
         }
     };
     /***
+     * Express Route Logger Middleware
+     * pattern :
+     *      %protocol,
+     *      %host,
+     *      %port,
+     *      %method,
+     *      %url,
+     *      %originalUrl
+     *      ...
+     * @param pattern
+     */
+    Logger.expressRouteLoggerMiddleware = function (pattern) {
+        if (pattern === void 0) { pattern = null; }
+        var logger = Logger.factory("ExpressRoute").setPattern(pattern || Logger.EXPRESS_MIDDLEWARE_PATTERN), date = new Date().toISOString();
+        return function (req, res, next) {
+            var _d = new Date();
+            logger.setProp("protocol", req.protocol || undefined)
+                .setProp("host", req.host || undefined)
+                .setProp("port", req.port || undefined)
+                .setProp("method", req.method.toUpperCase() || undefined)
+                .setProp("url", req.url || undefined)
+                .setProp("remoteAddr", req.connection.remoteAddress || undefined)
+                .setProp("elapsedTime", Utils_1.Utils.parseTime(_d.getTime() - new Date(date).getTime()) || undefined)
+                .log();
+            date = _d.toISOString();
+            next();
+        };
+    };
+    /***
      * @constructor
      * @param name
      */
@@ -268,6 +325,7 @@ var Logger = /** @class */ (function () {
     };
     Logger.DEFAULT_LOG_PATTERN_MONO = "%time\t%name\t: %type :\t%error";
     Logger.WEBDRIVER_LOG_PATTERN_COLORED = "[%hours{cyan}] %T{w?yellow;e?red}/%name - %error";
+    Logger.EXPRESS_MIDDLEWARE_PATTERN = "[%hours{yellow}] %name %protocol{red} - %method %url +%elapsedTime{yellow}";
     Logger.COLORS_REGEXP = /(\%[a-zA-z]+)\{([a-z]+|((([lewidc]+)\?[a-z]+?\;*)+?(\:[a-z]+)*)+)\}/;
     /***
      * Basic configuration

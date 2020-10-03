@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Utils = void 0;
 var fs_1 = require("fs");
+var util_1 = require("util");
 var Utils = /** @class */ (function () {
     function Utils() {
     }
@@ -67,7 +68,7 @@ var Utils = /** @class */ (function () {
      * @return {boolean}
      */
     Utils.existsDir = function (directory) {
-        if (directory === void 0) { directory = ""; }
+        if (directory === void 0) { directory = null; }
         try {
             fs_1.statSync(directory);
             return true;
@@ -75,6 +76,38 @@ var Utils = /** @class */ (function () {
         catch (e) {
             return false;
         }
+    };
+    Utils.merge = function (objA, objB) {
+        if (objA === void 0) { objA = {}; }
+        if (objB === void 0) { objB = {}; }
+        try {
+            for (var tmp in objB)
+                if (!objA[tmp])
+                    objA[tmp] = objB[tmp];
+        }
+        catch (e) {
+            return objA;
+        }
+        return objA;
+    };
+    Utils.repeat = function (value, loop) {
+        if (value === void 0) { value = ""; }
+        if (loop === void 0) { loop = 0; }
+        return new Array(loop).fill(value).join("");
+    };
+    Utils.parseTime = function (timeStamp) {
+        if (timeStamp === void 0) { timeStamp = 0; }
+        var h, m, s, ms;
+        if (timeStamp < 1000)
+            return "0." + timeStamp;
+        else {
+            ms = timeStamp / 1000;
+            h = Math.floor((ms) / 3600);
+            m = Math.floor((ms) / 60) - (3600 * h);
+            s = Math.floor(ms % 60);
+            ms = Math.round(ms);
+        }
+        return util_1.format("%s%s%s%s", (h > 0 ? Utils.round(h) + ":" : ""), m > 0 ? Utils.round(m) + ":" : "", s > 0 ? Utils.round(s) + "." : "", Utils.repeat("0", 3 - String(ms).length) + ms);
     };
     return Utils;
 }());
