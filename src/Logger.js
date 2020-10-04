@@ -260,23 +260,27 @@ var Logger = /** @class */ (function () {
      */
     Logger.stdout = function () {
         var _a;
-        var args = Array.from(arguments), type = args.shift().toUpperCase(), message = args.shift() || Logger.parser, prop = args.shift(), name = args.shift(), out = new utils_ts_1.ArrayList();
+        var args = Array.from(arguments), type = args.shift().toUpperCase(), message = args.shift() || Logger.parser, prop = args.shift(), name = args.shift(), out = new utils_ts_1.ArrayList(), cleanArgv = [], hasColor = false;
         if (Logger.logLevel.indexOf(type.toUpperCase()) > -1 || Logger.logLevel.indexOf("ALL") > -1) {
             // cast Object to String
             args.map(function (value) { return (typeof value).equals("object") ? JSON.stringify(value) : value; });
             // check if colorize pattern
             if (Logger.COLORS_REGEXP.test(message)) {
-                if (Logger.cleanUpBeforeSave && Logger.saveLog)
+                if (Logger.cleanUpBeforeSave && Logger.saveLog) {
                     out.add(Logger.colorizeString(message, type, false)); // cleanUp
+                }
                 out.add(Logger.colorizeString(message, type, Logger.colorize));
             }
+            else
+                out.add(message);
+            cleanArgv = args.map(function (value) { return typeof value === "string" ? value.colorize().cleanUp : value; });
             out = out.stream()
                 .map(function (value) { return Logger.parseString(value, type, name, prop); })
                 /***
                  * replace message log here avoid
                  * regexp fall in infinite loop
                  */
-                .map(function (value) { return value.replace(/\%error|\%message/gi, util_1.format.apply(null, args)); })
+                .map(function (value, key) { return value.replace(/\%error|\%message/gi, util_1.format.apply(null, key === 0 && Logger.cleanUpBeforeSave && Logger.saveLog ? cleanArgv : args)); })
                 .getList();
             if (Logger.saveLog) {
                 // logRotate
@@ -324,7 +328,7 @@ var Logger = /** @class */ (function () {
         return function (req, res, next) {
             var _d = new Date();
             logger.setProp("protocol", req.protocol || undefined)
-                .setProp("host", req.host || undefined)
+                .setProp("host", req.hostname || undefined)
                 .setProp("port", req.port || undefined)
                 .setProp("method", req.method.toUpperCase() || undefined)
                 .setProp("url", req.url || undefined)

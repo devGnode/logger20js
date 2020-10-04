@@ -4,6 +4,7 @@
   "author": "Maroder - <devgnode@gmail.com>",
   "description": "logger for nodejs and typescript - logger20js-ts",
   "main": "export/Logger20js.js",
+  "types": "./export/Logger20js.d.ts",
   "repository": {
     "type": "git",
     "url": "git://github.com/devGnode/logger20js.git"

@@ -22,4 +22,5 @@ export declare class Colorize {
     get fWhite(): string;
     get fGray(): string;
     get fGrey(): string;
+    get cleanUp(): string;
 }
