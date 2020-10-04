@@ -30,6 +30,11 @@ export class Colorize{
     public get fWhite( ){return this.parse(47);}
     public get fGray( ){return this.parse(48);}
     public get fGrey( ){return this.parse(49);}
+    public get cleanUp( ){
+        return this.value
+            .replace(/\x1b\[\d+m|\u001b\[\d+m/g,"")
+            .replace(/\x1b\[0m|\u001b\[0m/g,"");
+    }
 }
 /***
  * Extended string native Object

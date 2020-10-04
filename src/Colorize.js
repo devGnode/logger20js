@@ -112,6 +112,15 @@ var Colorize = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
+    Object.defineProperty(Colorize.prototype, "cleanUp", {
+        get: function () {
+            return this.value
+                .replace(/\x1b\[\d+m|\u001b\[\d+m/g, "")
+                .replace(/\x1b\[0m|\u001b\[0m/g, "");
+        },
+        enumerable: false,
+        configurable: true
+    });
     return Colorize;
 }());
 exports.Colorize = Colorize;

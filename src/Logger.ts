@@ -272,7 +272,8 @@ export class Logger implements Loggable{
             type     = args.shift().toUpperCase(),
             message  =  args.shift() || Logger.parser,
             prop     = args.shift(), name = args.shift(),
-            out : List<String> = new ArrayList<String>();
+            out : List<String> = new ArrayList<String>(),
+            cleanArgv : Array<any> = [], hasColor : boolean = false;
 
         if( Logger.logLevel.indexOf(type.toUpperCase())>-1||Logger.logLevel.indexOf("ALL")>-1) {
 
@@ -280,17 +281,20 @@ export class Logger implements Loggable{
             args.map(value=>(typeof value).equals("object")?JSON.stringify(value):value);
             // check if colorize pattern
             if(Logger.COLORS_REGEXP.test(message)) {
-                if(Logger.cleanUpBeforeSave&&Logger.saveLog) out.add(Logger.colorizeString(message, type,false)); // cleanUp
+                if(Logger.cleanUpBeforeSave&&Logger.saveLog) {
+                    out.add(Logger.colorizeString(message, type,false)); // cleanUp
+                }
                 out.add(Logger.colorizeString(message, type, Logger.colorize));
-            }
+            }else out.add(message);
 
-          out = out.stream()
+            cleanArgv = args.map(value=>typeof value==="string"?value.colorize().cleanUp:value);
+            out = out.stream()
               .map(value=>Logger.parseString(value,type,name,prop))
               /***
                * replace message log here avoid
                * regexp fall in infinite loop
                */
-              .map(value=>value.replace(/\%error|\%message/gi,format.apply(null,args)))
+              .map((value,key)=>value.replace(/\%error|\%message/gi,format.apply(null,key===0&&Logger.cleanUpBeforeSave&&Logger.saveLog?cleanArgv:args)))
               .getList();
 
           if(Logger.saveLog){
@@ -337,7 +341,7 @@ export class Logger implements Loggable{
         return (req,res,next) => {
             let _d = new Date();
             logger.setProp("protocol",req.protocol||undefined)
-                .setProp("host",req.host||undefined)
+                .setProp("host",req.hostname||undefined)
                 .setProp("port",req.port||undefined)
                 .setProp("method",req.method.toUpperCase()||undefined)
                 .setProp("url",req.url||undefined)
