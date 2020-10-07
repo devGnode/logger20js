@@ -1,6 +1,5 @@
 import {Logger} from "./Logger";
 import Timeout = NodeJS.Timeout;
-import {Utils} from "./Utils";
 import "./Colorize";
 /***
  * ALPHA CLASS
@@ -24,11 +23,11 @@ export class Loader{
 
     private static repeat( char : string = "", loop : number = 0 ) : string {
         loop = loop-1<0?0:loop-1;
-        return Utils.repeat(char,loop)+(loop<=99 ? ">" : char)+Utils.repeat(".",99-loop);
+        return String.repeatString(char,loop)+(loop<=99 ? ">" : char)+String.repeatString(".",99-loop);
     }
 
     public start( endingMessage : string = "" ) : Loader {
-        let next = 0,perc;
+        let next : number = 0,perc : number;
         if(Loader.isBusy) return;
         this.timerHandle = setInterval(()=>{
             perc = Math.round( (this.size / this.maxSize )*100 );
