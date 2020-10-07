@@ -3,17 +3,29 @@ import * as readline from 'readline';
 import {v4} from 'uuid';
 import {Utils} from "./Utils";
 import {format} from "util";
-import {HashMap,List,ArrayList} from "lib-utils-ts/export/utils-ts";
+import {HashMap,List,ArrayList} from "lib-utils-ts";
 import {ascii} from "lib-utils-ts/src/Interface";
 import {filterLogLevel, Loggable, strLogLevel} from "./Loggable";
 import {Loader} from "./loader";
-
+/****
+ * Minimal logger in js-ts.
+ * I hope this code can be utils to somebody :)
+ *
+ * npm     : logger20js-ts
+ * version:  1.2.3
+ * Licence : Apache-2.0
+ */
 export class Logger implements Loggable{
-
+    /**
+     * static Pattern
+     */
     public static readonly DEFAULT_LOG_PATTERN_MONO        : string = "%time\t%name\t: %type :\t%error";
     public static readonly WEBDRIVER_LOG_PATTERN_COLORED   : string = "[%hours{cyan}] %T{w?yellow;e?red}/%name - %error";
     public static readonly EXPRESS_MIDDLEWARE_PATTERN      : string = "[%hours{yellow}] %name %protocol{red} - %method %url +%elapsedTime{yellow}";
-
+    public static readonly STATS_MEMORY_PATTERN : string            = "[%hours{cyan}] %T{cyan}/%name{cyan} memory : heap( %heapUsed{yellow}, %heapTotal{yellow} ) : rss( %rss{yellow} ) : external( %external{yellow} )";
+    public static readonly CPU_USAGE_PATTERN : string               = "[%hours{cyan}] user CPUTime( %userCPUTime{yellow} ) system CPUTime( %systemCPUTime{yellow} ) maxRss( %maxRSS{yellow} ) ";
+    /***
+     */
     private static readonly COLORS_REGEXP : RegExp = /(\%[a-zA-z]+)\{([a-z]+|((([lewidc]+)\?[a-z]+?\;*)+?(\:[a-z]+)*)+)\}/;
     /***
      * Basic configuration
@@ -27,7 +39,6 @@ export class Logger implements Loggable{
     private static cleanUpBeforeSave : boolean = true;
     private static logRotate : string   = null;
     private static rotateOutOfTimestamp : Date = Utils.getRotateTimestampOutOf(Logger.logRotate);
-
     /**
      * output file
      */
@@ -43,9 +54,9 @@ export class Logger implements Loggable{
     /***
      * others
      */
+    private prop : Object           = {};
     private name : String           = null;
     private pattern : String        = null;
-    private prop : Object           = null;
 
     constructor( name : String = undefined ) {
         /***
@@ -53,14 +64,20 @@ export class Logger implements Loggable{
          * getProperty :
          *  @key
          *  @defaultValue
+         *//***
+            + Next Feature
+            + in real that make no sense to define this here, if you have declared all logger handle but you
+            + modify your owns properties after to have declared them, well with out a reload the configuration
+            + properties of Logger they will not be updated. So i think its better to created a method for
+            + reload the configuration when i wish updated them....
          */
-        if(Logger.propertiesConfig!==null&&typeof Logger.propertiesConfig.getProperty === "function"){
+        if(Logger.propertiesConfig!==null&&typeof Logger.propertiesConfig?.getProperty === "function"){
             Logger.parser       = Logger.propertiesConfig.getProperty("loggerParser","%time\t%name\t : %type :\t%error");
             Logger.saveLog      = Logger.propertiesConfig.getProperty("saveLog", true);
             Logger.logStdout    = Logger.propertiesConfig.getProperty("logStdout", true);
             Logger.logLevel     = Logger.propertiesConfig.getProperty("logLevel", ["ALL"]);
             Logger.fileNamePattern = Logger.propertiesConfig.getProperty("logFileNamePattern","%date-%id");
-            Logger.outputLog       = Logger.propertiesConfig.getProperty("loggerOutputDir", "");
+            Logger.outputLog       = Logger.propertiesConfig.getProperty("loggerOutputDir","");
             Logger.fileMaxSize     = Logger.propertiesConfig.getProperty("logFileMaxSize",null);
             Logger.logfileReuse    = Logger.propertiesConfig.getProperty("logFileReusePath",null);
             Logger.colorize        = Logger.propertiesConfig.getProperty("logEnabledColorize", true );
@@ -100,9 +117,13 @@ export class Logger implements Loggable{
         return this;
     }
 
-    public setProp( key : string|number, value : any = null ) : Logger{
-        if(!this.prop) this.prop = {};
+    public setProp( key : string|number, value : any ) : Logger{
         this.prop[key] = value;
+        return this;
+    }
+
+    public setPropObject( ... args : Object[] ) : Logger{
+        Utils.merge.apply(null, [this.prop].concat(Array.from(args)));
         return this;
     }
 
@@ -137,14 +158,12 @@ export class Logger implements Loggable{
         Logger.logLevel = level;
     }
 
-    public static popLevel( logType : strLogLevel = "ALL" ){
+    public static popLevel( logType : strLogLevel = "ALL" ) : void{
         let tmp;
-        if((tmp=this.logLevel.indexOf(logType))>-1){
-            this.logLevel = this.logLevel.slice(0,tmp).concat(this.logLevel.slice(tmp+1,this.logLevel.length));
-        }
+        if((tmp=this.logLevel.indexOf(logType))>-1)this.logLevel = this.logLevel.slice(0,tmp).concat(this.logLevel.slice(tmp+1,this.logLevel.length));
     }
 
-    public static pushLevel( logType : strLogLevel = "ALL" ){
+    public static pushLevel( logType : strLogLevel = "ALL" ): void{
         if(this.logLevel.indexOf(logType)===-1)this.logLevel.push(logType);
     }
 
@@ -173,7 +192,7 @@ export class Logger implements Loggable{
     }
 
     public static setLogRotate( rotate : string = "1d" ) : void {
-        let date;
+        let date : Date;
         if((date=Utils.getRotateTimestampOutOf(rotate))){
             this.rotateOutOfTimestamp = date;
             return;
@@ -195,7 +214,6 @@ export class Logger implements Loggable{
                     ];
        return colors.indexOf(color)>-1? String(colors.indexOf(color)):"30";
     }
-
     /***
      */
     public static getLoggerFileName() : String {
@@ -211,10 +229,8 @@ export class Logger implements Loggable{
         }).each((value,key)=>{
             filename = filename.replace(new RegExp(`\%${key}`),String(value));
         });
-
         return filename;
     }
-
     /***
      * @param message
      * @param type
@@ -238,7 +254,6 @@ export class Logger implements Loggable{
             return (interrupt || format("\x1b[%sm%s\x1b[0m",define||Logger.translateColorToInt(this[2]),this[1]));
         });
     }
-
     /***
      * @param message
      * @param type
@@ -246,9 +261,27 @@ export class Logger implements Loggable{
      * @param dat
      */
     private static parseString( message : String = null, type : string = null, name : string = null, dat : Object = null ) : String {
-        let d = new Date(),
+        let list :  ArrayList<string>,tmp : any = {}, d = new Date(),
             h = Utils.round(d.getHours()), m = Utils.round(d.getMinutes()),
             s = Utils.round(d.getSeconds()), ss= d.getMilliseconds() ;
+
+        try {
+            // try to define the name of file in exception
+            // and the line number and columns.
+            list = (Error()).stack
+                .replace(/\w+\:\s*\n/, "")
+                .explodeAsList(/\n|\r\n/)
+                .stream()
+                .filter(value => !(/Logger\.[\w]{2}/.test(value)))
+                .findFirst()
+                .orElse("nop (unknown:0:0)")
+                .replace(/.+\(|\)/gi, "")
+                .exec(/([^\\\/]*)$/)[1]
+                .explodeAsList(":");
+            tmp.fileInException = list.get(0);
+            tmp.line            = list.get(1);
+            tmp.column          = list.get(2);
+        }catch (e) {console.warn(e);}
 
         HashMap.of<ascii>( Utils.merge({
             type : type,
@@ -256,14 +289,15 @@ export class Logger implements Loggable{
             time : d.getTime(),
             hours: format("%s:%s:%s",h,m,s),
             ms: ss, HH:h, mm: m, ss: s,
+            pid: process.pid, ppid: process.ppid,
             T: type.substr(0,1).toUpperCase()
-        },dat||{})).each((value,key)=>{
+        },dat||{},tmp))
+            .each((value,key)=>{
             // @ts-ignore
-            message = Utils.regExp(new RegExp(`\%${key}`),message,()=>value.toString());
+            message = message.regExp(new RegExp(`\%${key}`),()=>value.toString());
         });
         return message;
     }
-
     /***
      * @param type, message [, Object .... ]
      */
@@ -273,7 +307,7 @@ export class Logger implements Loggable{
             message  =  args.shift() || Logger.parser,
             prop     = args.shift(), name = args.shift(),
             out : List<String> = new ArrayList<String>(),
-            cleanArgv : Array<any> = [], hasColor : boolean = false;
+            cleanArgv : Array<any> = [];
 
         if( Logger.logLevel.indexOf(type.toUpperCase())>-1||Logger.logLevel.indexOf("ALL")>-1) {
 
@@ -281,9 +315,7 @@ export class Logger implements Loggable{
             args.map(value=>(typeof value).equals("object")?JSON.stringify(value):value);
             // check if colorize pattern
             if(Logger.COLORS_REGEXP.test(message)) {
-                if(Logger.cleanUpBeforeSave&&Logger.saveLog) {
-                    out.add(Logger.colorizeString(message, type,false)); // cleanUp
-                }
+                if(Logger.cleanUpBeforeSave&&Logger.saveLog) out.add(Logger.colorizeString(message, type,false)); // cleanUp
                 out.add(Logger.colorizeString(message, type, Logger.colorize));
             }else out.add(message);
 
@@ -294,22 +326,21 @@ export class Logger implements Loggable{
                * replace message log here avoid
                * regexp fall in infinite loop
                */
-              .map((value,key)=>value.replace(/\%error|\%message/gi,format.apply(null,key===0&&Logger.cleanUpBeforeSave&&Logger.saveLog?cleanArgv:args)))
+              .map((value,key)=>value.replace(/\%error|\%message/gi,format.apply(null,key===0&&(!Logger.colorize||Logger.cleanUpBeforeSave&&Logger.saveLog)?cleanArgv:args)))
               .getList();
 
           if(Logger.saveLog){
                // logRotate
-              if( Logger.rotateOutOfTimestamp && (new Date()).getTime() > Logger.rotateOutOfTimestamp.getTime() ){
-                  Logger.restartRotate();
-              }
+              if( Logger.rotateOutOfTimestamp && (new Date()).getTime() > Logger.rotateOutOfTimestamp.getTime() )Logger.restartRotate();
                let filename = Logger.getLoggerFileName();
                if(
                    Logger.fileMaxSize===null || ( Logger.fileMaxSize>=0 &&
                    Utils.getFileSize(Logger.outputLog+`/${filename}.log`) <= Logger.fileMaxSize )
                ){
-                   try {
-                       Utils.writeLog(Logger.outputLog, filename, out.get(0) );
-                   }catch (e) {console.warn(e);}
+                   try {Utils.writeLog(Logger.outputLog, filename, out.get(0) )}
+                   catch (e) {
+                       console.warn(e);
+                   }
                }
           }
             if(Logger.logStdout) {
@@ -322,7 +353,6 @@ export class Logger implements Loggable{
             }
         }
     }
-
     /***
      * Express Route Logger Middleware
      * pattern :
@@ -352,15 +382,16 @@ export class Logger implements Loggable{
             next();
         };
     }
-
     /***
      * @param sizeOf
      */
-    public static getLoader( sizeOf : number = 0 ){
+    public static getLoader( sizeOf : number = 0 ) : Loader{
         if(!Loader.loaderIsBusy()) return new Loader(sizeOf);
         return null;
     }
-
+    /***
+     */
+    public static stats( ) :Stats{return Stats.getInstance();}
     /***
      * @constructor
      * @param name
@@ -368,4 +399,36 @@ export class Logger implements Loggable{
     public static factory(name : String = undefined ) : Logger {
         return new Logger(name);
     }
+}
+/***
+ * Stats Class has been declared here
+ * but i wish to move it to another place
+ */
+class Stats{
+
+    private static readonly INSTANCE :Stats     = new Stats();
+    private readonly Log :Logger                = Logger.factory(Stats.name);
+    private readonly patternList : List<String> = null;
+
+    constructor() {
+        if(Stats.INSTANCE) return;
+        this.patternList = ArrayList.of<String>([Logger.STATS_MEMORY_PATTERN,Logger.CPU_USAGE_PATTERN] );
+        this.Log
+            .setPropObject(process.memoryUsage(),process.resourceUsage(),process.versions)
+            .setProp("pid",process.pid)
+            .setProp("ppid",process.ppid);
+    }
+
+    private apply( key : number, pattern : string = null ) : void{
+        if(pattern) this.patternList.set(key,pattern);
+        this.Log.setPattern(pattern||this.patternList.get(key)).debug();
+    }
+
+    public memory( pattern : string = null ) : void{this.apply(0,pattern);}
+
+    public cpu( pattern : string = null ) : void{this.apply(1,pattern);}
+
+    public version( pattern : string ) : void{this.apply(2,pattern);}
+
+    public static getInstance(){return Stats.INSTANCE;}
 }

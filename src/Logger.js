@@ -6,24 +6,39 @@ var readline = require("readline");
 var uuid_1 = require("uuid");
 var Utils_1 = require("./Utils");
 var util_1 = require("util");
-var utils_ts_1 = require("lib-utils-ts/export/utils-ts");
+var lib_utils_ts_1 = require("lib-utils-ts");
 var loader_1 = require("./loader");
+/****
+ * Minimal logger in js-ts.
+ * I hope this code can be utils to somebody :)
+ *
+ * npm     : logger20js-ts
+ * version:  1.2.3
+ * Licence : Apache-2.0
+ */
 var Logger = /** @class */ (function () {
     function Logger(name) {
         if (name === void 0) { name = undefined; }
+        var _a;
         /***
          * others
          */
+        this.prop = {};
         this.name = null;
         this.pattern = null;
-        this.prop = null;
         /***
          * Rewrite Logger configuration
          * getProperty :
          *  @key
          *  @defaultValue
-         */
-        if (Logger.propertiesConfig !== null && typeof Logger.propertiesConfig.getProperty === "function") {
+         */ /***
+           + Next Feature
+           + in real that make no sense to define this here, if you have declared all logger handle but you
+           + modify your owns properties after to have declared them, well with out a reload the configuration
+           + properties of Logger they will not be updated. So i think its better to created a method for
+           + reload the configuration when i wish updated them....
+        */
+        if (Logger.propertiesConfig !== null && typeof ((_a = Logger.propertiesConfig) === null || _a === void 0 ? void 0 : _a.getProperty) === "function") {
             Logger.parser = Logger.propertiesConfig.getProperty("loggerParser", "%time\t%name\t : %type :\t%error");
             Logger.saveLog = Logger.propertiesConfig.getProperty("saveLog", true);
             Logger.logStdout = Logger.propertiesConfig.getProperty("logStdout", true);
@@ -87,10 +102,15 @@ var Logger = /** @class */ (function () {
         return this;
     };
     Logger.prototype.setProp = function (key, value) {
-        if (value === void 0) { value = null; }
-        if (!this.prop)
-            this.prop = {};
         this.prop[key] = value;
+        return this;
+    };
+    Logger.prototype.setPropObject = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        Utils_1.Utils.merge.apply(null, [this.prop].concat(Array.from(args)));
         return this;
     };
     Logger.setPropertiesConfigHandle = function (handle) {
@@ -127,9 +147,8 @@ var Logger = /** @class */ (function () {
     Logger.popLevel = function (logType) {
         if (logType === void 0) { logType = "ALL"; }
         var tmp;
-        if ((tmp = this.logLevel.indexOf(logType)) > -1) {
+        if ((tmp = this.logLevel.indexOf(logType)) > -1)
             this.logLevel = this.logLevel.slice(0, tmp).concat(this.logLevel.slice(tmp + 1, this.logLevel.length));
-        }
     };
     Logger.pushLevel = function (logType) {
         if (logType === void 0) { logType = "ALL"; }
@@ -189,7 +208,7 @@ var Logger = /** @class */ (function () {
     Logger.getLoggerFileName = function () {
         var _a;
         var d = new Date(), filename = Logger.fileNamePattern;
-        utils_ts_1.HashMap.of({
+        lib_utils_ts_1.HashMap.of({
             id: Logger.oid,
             date: d.toLocaleDateString().replace(/\//g, "-"),
             ms: d.getMilliseconds(), HH: Utils_1.Utils.round(d.getHours()),
@@ -241,17 +260,39 @@ var Logger = /** @class */ (function () {
         if (type === void 0) { type = null; }
         if (name === void 0) { name = null; }
         if (dat === void 0) { dat = null; }
-        var d = new Date(), h = Utils_1.Utils.round(d.getHours()), m = Utils_1.Utils.round(d.getMinutes()), s = Utils_1.Utils.round(d.getSeconds()), ss = d.getMilliseconds();
-        utils_ts_1.HashMap.of(Utils_1.Utils.merge({
+        var list, tmp = {}, d = new Date(), h = Utils_1.Utils.round(d.getHours()), m = Utils_1.Utils.round(d.getMinutes()), s = Utils_1.Utils.round(d.getSeconds()), ss = d.getMilliseconds();
+        try {
+            // try to define the name of file in exception
+            // and the line number and columns.
+            list = (Error()).stack
+                .replace(/\w+\:\s*\n/, "")
+                .explodeAsList(/\n|\r\n/)
+                .stream()
+                .filter(function (value) { return !(/Logger\.[\w]{2}/.test(value)); })
+                .findFirst()
+                .orElse("nop (unknown:0:0)")
+                .replace(/.+\(|\)/gi, "")
+                .exec(/([^\\\/]*)$/)[1]
+                .explodeAsList(":");
+            tmp.fileInException = list.get(0);
+            tmp.line = list.get(1);
+            tmp.column = list.get(2);
+        }
+        catch (e) {
+            console.warn(e);
+        }
+        lib_utils_ts_1.HashMap.of(Utils_1.Utils.merge({
             type: type,
             name: name,
             time: d.getTime(),
             hours: util_1.format("%s:%s:%s", h, m, s),
             ms: ss, HH: h, mm: m, ss: s,
+            pid: process.pid, ppid: process.ppid,
             T: type.substr(0, 1).toUpperCase()
-        }, dat || {})).each(function (value, key) {
+        }, dat || {}, tmp))
+            .each(function (value, key) {
             // @ts-ignore
-            message = Utils_1.Utils.regExp(new RegExp("%" + key), message, function () { return value.toString(); });
+            message = message.regExp(new RegExp("%" + key), function () { return value.toString(); });
         });
         return message;
     };
@@ -260,15 +301,14 @@ var Logger = /** @class */ (function () {
      */
     Logger.stdout = function () {
         var _a;
-        var args = Array.from(arguments), type = args.shift().toUpperCase(), message = args.shift() || Logger.parser, prop = args.shift(), name = args.shift(), out = new utils_ts_1.ArrayList(), cleanArgv = [], hasColor = false;
+        var args = Array.from(arguments), type = args.shift().toUpperCase(), message = args.shift() || Logger.parser, prop = args.shift(), name = args.shift(), out = new lib_utils_ts_1.ArrayList(), cleanArgv = [];
         if (Logger.logLevel.indexOf(type.toUpperCase()) > -1 || Logger.logLevel.indexOf("ALL") > -1) {
             // cast Object to String
             args.map(function (value) { return (typeof value).equals("object") ? JSON.stringify(value) : value; });
             // check if colorize pattern
             if (Logger.COLORS_REGEXP.test(message)) {
-                if (Logger.cleanUpBeforeSave && Logger.saveLog) {
+                if (Logger.cleanUpBeforeSave && Logger.saveLog)
                     out.add(Logger.colorizeString(message, type, false)); // cleanUp
-                }
                 out.add(Logger.colorizeString(message, type, Logger.colorize));
             }
             else
@@ -280,13 +320,12 @@ var Logger = /** @class */ (function () {
                  * replace message log here avoid
                  * regexp fall in infinite loop
                  */
-                .map(function (value, key) { return value.replace(/\%error|\%message/gi, util_1.format.apply(null, key === 0 && Logger.cleanUpBeforeSave && Logger.saveLog ? cleanArgv : args)); })
+                .map(function (value, key) { return value.replace(/\%error|\%message/gi, util_1.format.apply(null, key === 0 && (!Logger.colorize || Logger.cleanUpBeforeSave && Logger.saveLog) ? cleanArgv : args)); })
                 .getList();
             if (Logger.saveLog) {
                 // logRotate
-                if (Logger.rotateOutOfTimestamp && (new Date()).getTime() > Logger.rotateOutOfTimestamp.getTime()) {
+                if (Logger.rotateOutOfTimestamp && (new Date()).getTime() > Logger.rotateOutOfTimestamp.getTime())
                     Logger.restartRotate();
-                }
                 var filename = Logger.getLoggerFileName();
                 if (Logger.fileMaxSize === null || (Logger.fileMaxSize >= 0 &&
                     Utils_1.Utils.getFileSize(Logger.outputLog + ("/" + filename + ".log")) <= Logger.fileMaxSize)) {
@@ -349,6 +388,9 @@ var Logger = /** @class */ (function () {
         return null;
     };
     /***
+     */
+    Logger.stats = function () { return Stats.getInstance(); };
+    /***
      * @constructor
      * @param name
      */
@@ -356,9 +398,16 @@ var Logger = /** @class */ (function () {
         if (name === void 0) { name = undefined; }
         return new Logger(name);
     };
+    /**
+     * static Pattern
+     */
     Logger.DEFAULT_LOG_PATTERN_MONO = "%time\t%name\t: %type :\t%error";
     Logger.WEBDRIVER_LOG_PATTERN_COLORED = "[%hours{cyan}] %T{w?yellow;e?red}/%name - %error";
     Logger.EXPRESS_MIDDLEWARE_PATTERN = "[%hours{yellow}] %name %protocol{red} - %method %url +%elapsedTime{yellow}";
+    Logger.STATS_MEMORY_PATTERN = "[%hours{cyan}] %T{cyan}/%name{cyan} memory : heap( %heapUsed{yellow}, %heapTotal{yellow} ) : rss( %rss{yellow} ) : external( %external{yellow} )";
+    Logger.CPU_USAGE_PATTERN = "[%hours{cyan}] user CPUTime( %userCPUTime{yellow} ) system CPUTime( %systemCPUTime{yellow} ) maxRss( %maxRSS{yellow} ) ";
+    /***
+     */
     Logger.COLORS_REGEXP = /(\%[a-zA-z]+)\{([a-z]+|((([lewidc]+)\?[a-z]+?\;*)+?(\:[a-z]+)*)+)\}/;
     /***
      * Basic configuration
@@ -387,4 +436,39 @@ var Logger = /** @class */ (function () {
     return Logger;
 }());
 exports.Logger = Logger;
+/***
+ * Stats Class has been declared here
+ * but i wish to move it to another place
+ */
+var Stats = /** @class */ (function () {
+    function Stats() {
+        this.Log = Logger.factory(Stats.name);
+        this.patternList = null;
+        if (Stats.INSTANCE)
+            return;
+        this.patternList = lib_utils_ts_1.ArrayList.of([Logger.STATS_MEMORY_PATTERN, Logger.CPU_USAGE_PATTERN]);
+        this.Log
+            .setPropObject(process.memoryUsage(), process.resourceUsage(), process.versions)
+            .setProp("pid", process.pid)
+            .setProp("ppid", process.ppid);
+    }
+    Stats.prototype.apply = function (key, pattern) {
+        if (pattern === void 0) { pattern = null; }
+        if (pattern)
+            this.patternList.set(key, pattern);
+        this.Log.setPattern(pattern || this.patternList.get(key)).debug();
+    };
+    Stats.prototype.memory = function (pattern) {
+        if (pattern === void 0) { pattern = null; }
+        this.apply(0, pattern);
+    };
+    Stats.prototype.cpu = function (pattern) {
+        if (pattern === void 0) { pattern = null; }
+        this.apply(1, pattern);
+    };
+    Stats.prototype.version = function (pattern) { this.apply(2, pattern); };
+    Stats.getInstance = function () { return Stats.INSTANCE; };
+    Stats.INSTANCE = new Stats();
+    return Stats;
+}());
 //# sourceMappingURL=Logger.js.map
