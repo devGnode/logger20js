@@ -13,7 +13,7 @@ var loader_1 = require("./loader");
  * I hope this code can be utils to somebody :)
  *
  * npm     : logger20js-ts
- * version:  1.2.3
+ * version:  1.2.4
  * Licence : Apache-2.0
  */
 var Logger = /** @class */ (function () {
@@ -130,6 +130,7 @@ var Logger = /** @class */ (function () {
         Logger.logStdout = stdout;
     };
     /***
+     * use  : setPattern method
      * @deprecated
      */
     Logger.setParser = function (parsing) {
@@ -291,7 +292,6 @@ var Logger = /** @class */ (function () {
             T: type.substr(0, 1).toUpperCase()
         }, dat || {}, tmp))
             .each(function (value, key) {
-            // @ts-ignore
             message = message.regExp(new RegExp("%" + key), function () { return value.toString(); });
         });
         return message;

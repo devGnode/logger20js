@@ -6,7 +6,7 @@ import { Loader } from "./loader";
  * I hope this code can be utils to somebody :)
  *
  * npm     : logger20js-ts
- * version:  1.2.3
+ * version:  1.2.4
  * Licence : Apache-2.0
  */
 export declare class Logger implements Loggable {
@@ -66,6 +66,7 @@ export declare class Logger implements Loggable {
     static setSaveLog(save?: boolean): void;
     static setLogStdout(stdout?: boolean): void;
     /***
+     * use  : setPattern method
      * @deprecated
      */
     static setParser(parsing?: String): void;
