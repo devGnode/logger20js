@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Loader = void 0;
 var Logger_1 = require("./Logger");
-var Utils_1 = require("./Utils");
 require("./Colorize");
 /***
  * ALPHA CLASS
@@ -22,7 +21,7 @@ var Loader = /** @class */ (function () {
         if (char === void 0) { char = ""; }
         if (loop === void 0) { loop = 0; }
         loop = loop - 1 < 0 ? 0 : loop - 1;
-        return Utils_1.Utils.repeat(char, loop) + (loop <= 99 ? ">" : char) + Utils_1.Utils.repeat(".", 99 - loop);
+        return String.repeatString(char, loop) + (loop <= 99 ? ">" : char) + String.repeatString(".", 99 - loop);
     };
     Loader.prototype.start = function (endingMessage) {
         var _this = this;
