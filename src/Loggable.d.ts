@@ -1,23 +1,11 @@
-import { Logger } from "./Logger";
 import { Colorize } from "./Colorize";
 /**
  * Type
  */
 export declare type filterLogLevel<T> = String[] | [...T[]];
 export declare type strLogLevel = "ALL" | "LOG" | "DEBUG" | "ERROR" | "INFO" | "CUSTOM" | "WARN";
-/***
- * Extends native Object
- */
-declare global {
-    interface String {
-        /***
-         *
-         */
-        colorize(): Colorize;
-    }
-}
 /**
- * Loggable
+ * Loggable Interface
  */
 export interface Loggable {
     /***
@@ -47,5 +35,24 @@ export interface Loggable {
     /***
      * @param pattern
      */
-    setPattern(pattern: String): Logger;
+    setPattern(pattern: String): Loggable;
+    /***
+     *
+     */
+    setProp(key: string | number, value: any): Loggable;
+    /***
+     *
+     */
+    setPropObject(...args: Object[]): Loggable;
+}
+/***
+ * Extends native Object
+ */
+declare global {
+    interface String {
+        /***
+         *
+         */
+        colorize(): Colorize;
+    }
 }

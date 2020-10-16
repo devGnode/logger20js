@@ -3,13 +3,12 @@ import { filterLogLevel, Loggable, strLogLevel } from "./Loggable";
 import { Loader } from "./loader";
 /****
  * Minimal logger in js-ts.
- * I hope this code can be utils to somebody :)
  *
  * npm     : logger20js-ts
- * version:  1.2.4
+ * version:  1.2.3
  * Licence : Apache-2.0
  */
-export declare class Logger implements Loggable {
+export declare abstract class AbsLogger implements Loggable {
     /**
      * static Pattern
      */
@@ -18,49 +17,58 @@ export declare class Logger implements Loggable {
     static readonly EXPRESS_MIDDLEWARE_PATTERN: string;
     static readonly STATS_MEMORY_PATTERN: string;
     static readonly CPU_USAGE_PATTERN: string;
+    static readonly VERSION_USAGE_PATTERN: string;
     /***
      */
     private static readonly COLORS_REGEXP;
     /***
-     * Basic configuration
+     * All properties configuration
      */
-    private static parser;
-    private static outputLog;
-    private static saveLog;
-    private static logStdout;
-    private static logLevel;
-    private static colorize;
-    private static cleanUpBeforeSave;
-    private static logRotate;
-    private static rotateOutOfTimestamp;
+    protected static parser: String;
+    protected static outputLog: string;
+    protected static saveLog: boolean;
+    protected static logStdout: boolean;
+    protected static logLevel: filterLogLevel<strLogLevel>;
+    protected static colorize: boolean;
+    protected static cleanUpBeforeSave: boolean;
+    protected static logRotate: string;
+    protected static rotateOutOfTimestamp: Date;
     /**
-     * output file
+     * output file uuid
      */
     static oid: String;
     /***
      * handles
      */
-    private static pipeStdout;
-    private static propertiesConfig;
-    private static fileNamePattern;
-    private static logfileReuse;
-    private static fileMaxSize;
+    protected static pipeStdout: InstanceType<any>;
+    protected static propertiesConfig: InstanceType<any>;
+    protected static fileNamePattern: String;
+    protected static logfileReuse: String;
+    protected static fileMaxSize: number;
     /***
-     * others
+     * object configuration properties
      */
-    private prop;
-    private name;
-    private pattern;
-    constructor(name?: String);
+    protected prop: Object;
+    protected name: String;
+    protected pattern: String;
+    /***
+     *
+     * @param name
+     */
+    protected constructor(name?: String);
     warn(...args: any[]): void;
     log(...args: any[]): void;
     info(...args: any[]): void;
     debug(...args: any[]): void;
     error(...args: any[]): void;
     custom(...args: any[]): void;
-    setPattern(pattern?: String): Logger;
-    setProp(key: string | number, value: any): Logger;
-    setPropObject(...args: Object[]): Logger;
+    setPattern(pattern?: String): Loggable;
+    setProp(key: string | number, value: any): Loggable;
+    setPropObject(...args: Object[]): Loggable;
+    /***
+     *
+     * Static Configuration
+     */
     static setPropertiesConfigHandle(handle?: any): void;
     static setOutputLog(path?: string): void;
     static setSaveLog(save?: boolean): void;
@@ -81,9 +89,14 @@ export declare class Logger implements Loggable {
     static setColorize(status?: boolean): void;
     static setCleanUpBeforeSave(state?: boolean): void;
     static setLogRotate(rotate?: string): void;
-    private static restartRotate;
-    private static translateColorToInt;
+    protected static restartRotate(): void;
     /***
+     *
+     * @param color
+     */
+    protected static translateColorToInt(color?: string): String;
+    /***
+     *
      */
     static getLoggerFileName(): String;
     /***
@@ -91,18 +104,28 @@ export declare class Logger implements Loggable {
      * @param type
      * @param colorize
      */
-    private static colorizeString;
+    protected static colorizeString(message?: string, type?: string, colorize?: boolean): string;
     /***
      * @param message
      * @param type
      * @param name
      * @param dat
      */
-    private static parseString;
+    protected static parseString(message?: String, type?: string, name?: string, dat?: Object): String;
     /***
      * @param type, message [, Object .... ]
      */
-    private static stdout;
+    protected static stdout(): void;
+}
+/***
+ * exportable usable Logger Object
+ */
+export declare class Logger extends AbsLogger {
+    /***
+     *
+     * @param name
+     */
+    constructor(name?: String);
     /***
      * Express Route Logger Middleware
      * pattern :
@@ -141,7 +164,7 @@ declare class Stats {
     private apply;
     memory(pattern?: string): void;
     cpu(pattern?: string): void;
-    version(pattern: string): void;
+    version(pattern?: string): void;
     static getInstance(): Stats;
 }
 export {};

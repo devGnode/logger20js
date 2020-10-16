@@ -1,6 +1,7 @@
 import {Logger} from "./Logger";
 import Timeout = NodeJS.Timeout;
 import "./Colorize";
+import {Loggable} from "./Loggable";
 /***
  * ALPHA CLASS
  * v 0.0.1
@@ -9,7 +10,7 @@ export class Loader{
 
     private static isBusy = false;
 
-    private logger : Logger      = null;
+    private logger : Loggable     = null;
     private timerHandle : Timeout = null;
     private size :  number        = 0;
     private maxSize : number      = 0;

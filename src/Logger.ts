@@ -9,13 +9,12 @@ import {filterLogLevel, Loggable, strLogLevel} from "./Loggable";
 import {Loader} from "./loader";
 /****
  * Minimal logger in js-ts.
- * I hope this code can be utils to somebody :)
  *
  * npm     : logger20js-ts
- * version:  1.2.4
+ * version:  1.2.3
  * Licence : Apache-2.0
  */
-export class Logger implements Loggable{
+export abstract class AbsLogger implements Loggable{
     /**
      * static Pattern
      */
@@ -24,41 +23,45 @@ export class Logger implements Loggable{
     public static readonly EXPRESS_MIDDLEWARE_PATTERN      : string = "[%hours{yellow}] %name %protocol{red} - %method %url +%elapsedTime{yellow}";
     public static readonly STATS_MEMORY_PATTERN            : string = "[%hours{cyan}] %T{cyan}/%name{cyan} memory : heap( %heapUsed{yellow}, %heapTotal{yellow} ) : rss( %rss{yellow} ) : external( %external{yellow} )";
     public static readonly CPU_USAGE_PATTERN               : string = "[%hours{cyan}] user CPUTime( %userCPUTime{yellow} ) system CPUTime( %systemCPUTime{yellow} ) maxRss( %maxRSS{yellow} ) ";
+    public static readonly VERSION_USAGE_PATTERN           : string = "[%hours{cyan}] version of : node( %node{yellow} ) - v8( %v8{yellow} )";
     /***
      */
     private static readonly COLORS_REGEXP : RegExp = /(\%[a-zA-z]+)\{([a-z]+|((([lewidc]+)\?[a-z]+?\;*)+?(\:[a-z]+)*)+)\}/;
     /***
-     * Basic configuration
+     * All properties configuration
      */
-    private static parser    : String   = Logger.DEFAULT_LOG_PATTERN_MONO;
-    private static outputLog : string   = "";
-    private static saveLog   : boolean  = false;
-    private static logStdout : boolean  = true;
-    private static logLevel  : filterLogLevel<strLogLevel> = ["ALL"];
-    private static colorize : boolean   = true;
-    private static cleanUpBeforeSave : boolean = true;
-    private static logRotate : string   = null;
-    private static rotateOutOfTimestamp : Date = Utils.getRotateTimestampOutOf(Logger.logRotate);
+    protected static parser    : String   = AbsLogger.DEFAULT_LOG_PATTERN_MONO;
+    protected static outputLog : string   = "";
+    protected static saveLog   : boolean  = false;
+    protected static logStdout : boolean  = true;
+    protected static logLevel  : filterLogLevel<strLogLevel> = ["ALL"];
+    protected static colorize : boolean   = true;
+    protected static cleanUpBeforeSave : boolean = true;
+    protected static logRotate : string   = null;
+    protected static rotateOutOfTimestamp : Date = Utils.getRotateTimestampOutOf(AbsLogger.logRotate);
     /**
-     * output file
+     * output file uuid
      */
     public static oid     : String   = v4();
     /***
      * handles
      */
-    private static pipeStdout :  InstanceType<any>      = null;
-    private static propertiesConfig : InstanceType<any> = null;
-    private static fileNamePattern : String = "%date-%id";
-    private static logfileReuse : String    = null;
-    private static fileMaxSize  : number    = null;
+    protected static pipeStdout :  InstanceType<any>      = null;
+    protected static propertiesConfig : InstanceType<any> = null;
+    protected static fileNamePattern : String = "%date-%id";
+    protected static logfileReuse : String    = null;
+    protected static fileMaxSize  : number    = null;
     /***
-     * others
+     * object configuration properties
      */
-    private prop : Object           = {};
-    private name : String           = null;
-    private pattern : String        = null;
-
-    constructor( name : String = undefined ) {
+    protected prop : Object           = {};
+    protected name : String           = null;
+    protected pattern : String        = null;
+    /***
+     *
+     * @param name
+     */
+    protected constructor( name : String = undefined ) {
         /***
          * Rewrite Logger configuration
          * getProperty :
@@ -71,91 +74,94 @@ export class Logger implements Loggable{
             + properties of Logger they will not be updated. So i think its better to created a method for
             + reload the configuration when i wish updated them....
          */
-        if(Logger.propertiesConfig!==null&&typeof Logger.propertiesConfig?.getProperty === "function"){
-            Logger.parser       = Logger.propertiesConfig.getProperty("loggerParser","%time\t%name\t : %type :\t%error");
-            Logger.saveLog      = Logger.propertiesConfig.getProperty("saveLog", true);
-            Logger.logStdout    = Logger.propertiesConfig.getProperty("logStdout", true);
-            Logger.logLevel     = Logger.propertiesConfig.getProperty("logLevel", ["ALL"]);
-            Logger.fileNamePattern = Logger.propertiesConfig.getProperty("logFileNamePattern","%date-%id");
-            Logger.outputLog       = Logger.propertiesConfig.getProperty("loggerOutputDir","");
-            Logger.fileMaxSize     = Logger.propertiesConfig.getProperty("logFileMaxSize",null);
-            Logger.logfileReuse    = Logger.propertiesConfig.getProperty("logFileReusePath",null);
-            Logger.colorize        = Logger.propertiesConfig.getProperty("logEnabledColorize", true );
+        if(AbsLogger.propertiesConfig!==null&&typeof AbsLogger.propertiesConfig?.getProperty === "function"){
+            AbsLogger.parser       = AbsLogger.propertiesConfig.getProperty("loggerParser","%time\t%name\t : %type :\t%error");
+            AbsLogger.saveLog      = AbsLogger.propertiesConfig.getProperty("saveLog", true);
+            AbsLogger.logStdout    = AbsLogger.propertiesConfig.getProperty("logStdout", true);
+            AbsLogger.logLevel     = AbsLogger.propertiesConfig.getProperty("logLevel", ["ALL"]);
+            AbsLogger.fileNamePattern = AbsLogger.propertiesConfig.getProperty("logFileNamePattern","%date-%id");
+            AbsLogger.outputLog       = AbsLogger.propertiesConfig.getProperty("loggerOutputDir","");
+            AbsLogger.fileMaxSize     = AbsLogger.propertiesConfig.getProperty("logFileMaxSize",null);
+            AbsLogger.logfileReuse    = AbsLogger.propertiesConfig.getProperty("logFileReusePath",null);
+            AbsLogger.colorize        = AbsLogger.propertiesConfig.getProperty("logEnabledColorize", true );
         }
         this.name = name;
     }
 
     public warn( ... args : any[] ) : void {
-        Logger.stdout.apply(null,["warn",this.pattern,this.prop,this.name].concat(Array.from(arguments)));
+        AbsLogger.stdout.apply(null,["warn",this.pattern,this.prop,this.name].concat(Array.from(arguments)));
     }
 
     public log( ... args : any[] ) : void {
-        Logger.stdout.apply(null,["log",this.pattern,this.prop,this.name].concat(Array.from(arguments)));
+        AbsLogger.stdout.apply(null,["log",this.pattern,this.prop,this.name].concat(Array.from(arguments)));
     }
 
     public info( ... args : any[] ) : void {
-        Logger.stdout.apply(null,["info",this.pattern,this.prop,this.name].concat(Array.from(arguments)));
+        AbsLogger.stdout.apply(null,["info",this.pattern,this.prop,this.name].concat(Array.from(arguments)));
     }
 
     public debug( ... args : any[] ) : void {
-        Logger.stdout.apply(null,["debug",this.pattern,this.prop,this.name].concat(Array.from(arguments)));
+        AbsLogger.stdout.apply(null,["debug",this.pattern,this.prop,this.name].concat(Array.from(arguments)));
     }
 
     public error( ... args : any[] ) : void {
-        Logger.stdout.apply(null,["error",this.pattern,this.prop,this.name].concat(Array.from(arguments)));
+        AbsLogger.stdout.apply(null,["error",this.pattern,this.prop,this.name].concat(Array.from(arguments)));
     }
 
     public custom( ... args : any[] ) : void {
-        let tmp = Logger.parser;
-        Logger.parser = Logger.parser.replace(/\%error/g,"\r\n%error");
-        Logger.stdout.apply(null,["custom",this.pattern,this.prop,this.name].concat(Array.from(arguments)));
-        Logger.parser = tmp;
+        let tmp = AbsLogger.parser;
+        AbsLogger.parser = AbsLogger.parser.replace(/\%error/g,"\r\n%error");
+        AbsLogger.stdout.apply(null,["custom",this.pattern,this.prop,this.name].concat(Array.from(arguments)));
+        AbsLogger.parser = tmp;
     }
 
-    public setPattern( pattern : String = "" ) : Logger{
+    public setPattern( pattern : String = "" ) :Loggable{
         this.pattern = pattern;
         return this;
     }
 
-    public setProp( key : string|number, value : any ) : Logger{
+    public setProp( key : string|number, value : any ) :Loggable{
         this.prop[key] = value;
         return this;
     }
 
-    public setPropObject( ... args : Object[] ) : Logger{
+    public setPropObject( ... args : Object[] ) :Loggable{
         Utils.merge.apply(null, [this.prop].concat(Array.from(args)));
         return this;
     }
-
+    /***
+     *
+     * Static Configuration
+     */
     public static setPropertiesConfigHandle( handle : any = null ) : void {
-        Logger.propertiesConfig = handle;
+        AbsLogger.propertiesConfig = handle;
     }
 
     public static setOutputLog( path : string = "" ) : void {
-        Logger.outputLog = path;
+        AbsLogger.outputLog = path;
     }
 
     public static setSaveLog( save : boolean =  false ) : void {
-        Logger.saveLog = save;
+        AbsLogger.saveLog = save;
     }
 
     public static setLogStdout( stdout : boolean = true ) : void {
-        Logger.logStdout = stdout;
+        AbsLogger.logStdout = stdout;
     }
     /***
      * use  : setPattern method
      * @deprecated
      */
-    public static setParser( parsing : String = Logger.DEFAULT_LOG_PATTERN_MONO ) : void {
-        Logger.parser = parsing;
+    public static setParser( parsing : String = AbsLogger.DEFAULT_LOG_PATTERN_MONO ) : void {
+        AbsLogger.parser = parsing;
     }
 
-    public static setPattern( pattern : String = Logger.DEFAULT_LOG_PATTERN_MONO ) : void {
-        Logger.parser = pattern;
+    public static setPattern( pattern : String = AbsLogger.DEFAULT_LOG_PATTERN_MONO ) : void {
+        AbsLogger.parser = pattern;
     }
 
     public static level( level : filterLogLevel<strLogLevel> = ["ALL"] ) : void {
-        Logger.logLevel = level;
+        AbsLogger.logLevel = level;
     }
 
     public static popLevel( logType : strLogLevel = "ALL" ) : void{
@@ -167,44 +173,47 @@ export class Logger implements Loggable{
         if(this.logLevel.indexOf(logType)===-1)this.logLevel.push(logType);
     }
 
-    public static setLogFilePattern( pattern : String = Logger.fileNamePattern ) : void {
-        Logger.fileNamePattern = pattern;
+    public static setLogFilePattern( pattern : String = AbsLogger.fileNamePattern ) : void {
+        AbsLogger.fileNamePattern = pattern;
     }
 
     public static setFileMaxSize(bytes : number = null) : void {
-        Logger.fileMaxSize = bytes;
+        AbsLogger.fileMaxSize = bytes;
     }
 
     public static setLogFileReuse( path : String = null ) : void {
-        Logger.logfileReuse = path;
+        AbsLogger.logfileReuse = path;
     }
 
     public static setPipeStdout( pipe : Object = null ) : void {
-        Logger.pipeStdout = pipe;
+        AbsLogger.pipeStdout = pipe;
     }
 
     public static setColorize( status : boolean = true ) : void {
-        Logger.colorize = status;
+        AbsLogger.colorize = status;
     }
 
-    public static setCleanUpBeforeSave( state : boolean = Logger.cleanUpBeforeSave ) : void {
-        Logger.cleanUpBeforeSave = state;
+    public static setCleanUpBeforeSave( state : boolean = AbsLogger.cleanUpBeforeSave ) : void {
+        AbsLogger.cleanUpBeforeSave = state;
     }
 
     public static setLogRotate( rotate : string = "1d" ) : void {
         let date : Date;
         if((date=Utils.getRotateTimestampOutOf(rotate))){
             this.rotateOutOfTimestamp = date;
-            return;
+            return void 0;
         }
         this.rotateOutOfTimestamp = null;
     }
 
-    private static restartRotate( ) : void{
-        this.rotateOutOfTimestamp = Utils.getRotateTimestampOutOf(Logger.logRotate);
+    protected static restartRotate( ) : void{
+        this.rotateOutOfTimestamp = Utils.getRotateTimestampOutOf(AbsLogger.logRotate);
     }
-
-    private static translateColorToInt( color : string = "black" ) : String {
+    /***
+     *
+     * @param color
+     */
+    protected static translateColorToInt( color : string = "black" ) : String {
        let colors : string[] = [
                     ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
                     'black','red','green','yellow',
@@ -215,17 +224,18 @@ export class Logger implements Loggable{
        return colors.indexOf(color)>-1? String(colors.indexOf(color)):"30";
     }
     /***
+     *
      */
     public static getLoggerFileName() : String {
         let d = new Date(),
-            filename = Logger.fileNamePattern;
+            filename = AbsLogger.fileNamePattern;
         HashMap.of<string,ascii>({
-            id : Logger.oid,
+            id : AbsLogger.oid,
             date : d.toLocaleDateString( ).replace(/\//g,"-"),
             ms: d.getMilliseconds(), HH:Utils.round(d.getHours()),
             mm: Utils.round(d.getMinutes()), ss: Utils.round(d.getSeconds()),
-            rotate: "."+(String(Logger.rotateOutOfTimestamp?.getTime())||"null"),
-            reuse: Logger.logfileReuse
+            rotate: "."+(String(AbsLogger.rotateOutOfTimestamp?.getTime())||"null"),
+            reuse: AbsLogger.logfileReuse
         }).each((value,key)=>{
             filename = filename.replace(new RegExp(`\%${key}`),String(value));
         });
@@ -236,22 +246,22 @@ export class Logger implements Loggable{
      * @param type
      * @param colorize
      */
-    private static colorizeString( message : string = null, type :string = null, colorize: boolean = Logger.colorize ) : string {
-        return message.regExp(Logger.COLORS_REGEXP,function(){
+    protected static colorizeString( message : string = null, type :string = null, colorize: boolean = AbsLogger.colorize ) : string {
+        return message.regExp(AbsLogger.COLORS_REGEXP,function(){
             let define=null,interrupt=null, _t=type.substring(0,1).toLowerCase();
 
             if(!colorize) return this[1];
             if(this[1].equals("%type")||this[1].equals("%T")&&this[3]!==undefined){
                 // try to define color
                 this[2].regExp(/([lewidc]{1})\?([a-z]+)?\;*/,function(){
-                    if(_t.equals(this[1]))define = Logger.translateColorToInt(this[2]);
+                    if(_t.equals(this[1]))define = AbsLogger.translateColorToInt(this[2]);
                 });
                 // default color
-                if(define===null&&this[6]!==undefined)define=Logger.translateColorToInt(this[6].replace(/^\:/,""));
+                if(define===null&&this[6]!==undefined)define=AbsLogger.translateColorToInt(this[6].replace(/^\:/,""));
                 // return %parser without any color
                 else if(define===null&&this[6]===undefined) interrupt=this[1];
             }
-            return (interrupt || format("\x1b[%sm%s\x1b[0m",define||Logger.translateColorToInt(this[2]),this[1]));
+            return (interrupt || format("\x1b[%sm%s\x1b[0m",define||AbsLogger.translateColorToInt(this[2]),this[1]));
         });
     }
     /***
@@ -260,7 +270,7 @@ export class Logger implements Loggable{
      * @param name
      * @param dat
      */
-    private static parseString( message : String = null, type : string = null, name : string = null, dat : Object = null ) : String {
+    protected static parseString( message : String = null, type : string = null, name : string = null, dat : Object = null ) : String {
         let list :  ArrayList<string>,tmp : any = {}, d = new Date(),
             h = Utils.round(d.getHours()), m = Utils.round(d.getMinutes()),
             s = Utils.round(d.getSeconds()), ss= d.getMilliseconds() ;
@@ -272,7 +282,7 @@ export class Logger implements Loggable{
                 .replace(/\w+\:\s*\n/, "")
                 .explodeAsList(/\n|\r\n/)
                 .stream()
-                .filter(value => !(/Logger\.[\w]{2}/.test(value)))
+                .filter(value => !(/AbsLogger\.[\w]{2}/.test(value)))
                 .findFirst()
                 .orElse("nop (unknown:0:0)")
                 .replace(/.+\(|\)/gi, "")
@@ -300,51 +310,51 @@ export class Logger implements Loggable{
     /***
      * @param type, message [, Object .... ]
      */
-    private static stdout( ) : void {
+    protected static stdout( ) : void {
         let args     = Array.from(arguments),
             type     = args.shift().toUpperCase(),
-            message  =  args.shift() || Logger.parser,
+            message  =  args.shift() || AbsLogger.parser,
             prop     = args.shift(), name = args.shift(),
             out : List<String> = new ArrayList<String>(),
             cleanArgv : Array<any> = [];
 
-        if( Logger.logLevel.indexOf(type.toUpperCase())>-1||Logger.logLevel.indexOf("ALL")>-1) {
+        if( AbsLogger.logLevel.indexOf(type.toUpperCase())>-1||AbsLogger.logLevel.indexOf("ALL")>-1) {
 
             // cast Object to String
             args.map(value=>(typeof value).equals("object")?JSON.stringify(value):value);
             // check if colorize pattern
-            if(Logger.COLORS_REGEXP.test(message)) {
-                if(Logger.cleanUpBeforeSave&&Logger.saveLog) out.add(Logger.colorizeString(message, type,false)); // cleanUp
-                out.add(Logger.colorizeString(message, type, Logger.colorize));
+            if(AbsLogger.COLORS_REGEXP.test(message)) {
+                if(AbsLogger.cleanUpBeforeSave&&AbsLogger.saveLog) out.add(AbsLogger.colorizeString(message, type,false)); // cleanUp
+                out.add(AbsLogger.colorizeString(message, type, AbsLogger.colorize));
             }else out.add(message);
 
             cleanArgv = args.map(value=>typeof value==="string"?value.colorize().cleanUp:value);
             out = out.stream()
-              .map(value=>Logger.parseString(value,type,name,prop))
+              .map(value=>AbsLogger.parseString(value,type,name,prop))
               /***
                * replace message log here avoid
                * regexp fall in infinite loop
                */
-              .map((value,key)=>value.replace(/\%error|\%message/gi,format.apply(null,key===0&&(!Logger.colorize||Logger.cleanUpBeforeSave&&Logger.saveLog)?cleanArgv:args)))
+              .map((value,key)=>value.replace(/\%error|\%message/gi,format.apply(null,key===0&&(!AbsLogger.colorize||AbsLogger.cleanUpBeforeSave&&AbsLogger.saveLog)?cleanArgv:args)))
               .getList();
 
-          if(Logger.saveLog){
+          if(AbsLogger.saveLog){
                // logRotate
-              if( Logger.rotateOutOfTimestamp && (new Date()).getTime() > Logger.rotateOutOfTimestamp.getTime() )Logger.restartRotate();
-               let filename = Logger.getLoggerFileName();
+              if( AbsLogger.rotateOutOfTimestamp && (new Date()).getTime() > AbsLogger.rotateOutOfTimestamp.getTime() )AbsLogger.restartRotate();
+               let filename = AbsLogger.getLoggerFileName();
                if(
-                   Logger.fileMaxSize===null || ( Logger.fileMaxSize>=0 &&
-                   Utils.getFileSize(Logger.outputLog+`/${filename}.log`) <= Logger.fileMaxSize )
+                   AbsLogger.fileMaxSize===null || ( AbsLogger.fileMaxSize>=0 &&
+                   Utils.getFileSize(AbsLogger.outputLog+`/${filename}.log`) <= AbsLogger.fileMaxSize )
                ){
-                   try {Utils.writeLog(Logger.outputLog, filename, out.get(0) )}
+                   try {Utils.writeLog(AbsLogger.outputLog, filename, out.get(0) )}
                    catch (e) {
                        console.warn(e);
                    }
                }
           }
-            if(Logger.logStdout) {
+            if(AbsLogger.logStdout) {
                 message = out.get( out.size()>1? 1 : 0 );
-                if(Logger.pipeStdout!==null) Logger.pipeStdout?.write.call(null,message); else {
+                if(AbsLogger.pipeStdout!==null) AbsLogger.pipeStdout?.write.call(null,message); else {
                     readline.clearLine(process.stdout,0);
                     readline.cursorTo( process.stdout,0);
                     process.stdout.write(message+"\n");
@@ -352,6 +362,16 @@ export class Logger implements Loggable{
             }
         }
     }
+}
+/***
+ * exportable usable Logger Object
+ */
+export class Logger extends AbsLogger{
+    /***
+     *
+     * @param name
+     */
+    constructor( name : String = undefined ) {super(name);}
     /***
      * Express Route Logger Middleware
      * pattern :
@@ -411,7 +431,7 @@ class Stats{
 
     constructor() {
         if(Stats.INSTANCE) return;
-        this.patternList = ArrayList.of([Logger.STATS_MEMORY_PATTERN,Logger.CPU_USAGE_PATTERN] );
+        this.patternList = ArrayList.of([Logger.STATS_MEMORY_PATTERN,Logger.CPU_USAGE_PATTERN,Logger.VERSION_USAGE_PATTERN] );
         this.Log
             .setPropObject(process.memoryUsage(),process.resourceUsage(),process.versions)
             .setProp("pid",process.pid)
@@ -427,7 +447,7 @@ class Stats{
 
     public cpu( pattern : string = null ) : void{this.apply(1,pattern);}
 
-    public version( pattern : string ) : void{this.apply(2,pattern);}
+    public version( pattern : string = null ) : void{this.apply(2,pattern);}
 
     public static getInstance(){return Stats.INSTANCE;}
 }

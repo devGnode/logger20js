@@ -44,7 +44,8 @@ DEFAULT_LOG_PATTERN_MONO        |  %time\t%name\t: %type :\t%error | Logger
 WEBDRIVER_LOG_PATTERN_COLORED   |   "\[%hours{cyan}\] %T{w?yellow}/%name - %error" | Logger
 EXPRESS_MIDDLEWARE_PATTERN      |   "\[%hours{yellow}\] %name %protocol{red} - %method %url +%elapsedTime{yellow}" | Express logger middleware
 STATS_MEMORY_PATTERN |\[%hours{cyan}\] %T{cyan}/%name{cyan} memory : heap( %heapUsed{yellow}, %heapTotal{yellow} ) : rss( %rss{yellow} ) : external( %external{yellow} ) | Logger stats
- CPU_USAGE_PATTERN  | \[%hours{cyan}\] user CPUTime( %userCPUTime{yellow} ) system CPUTime( %systemCPUTime{yellow} ) maxRss( %maxRSS{yellow} ) 
+ CPU_USAGE_PATTERN  | \[%hours{cyan}\] user CPUTime( %userCPUTime{yellow} ) system CPUTime( %systemCPUTime{yellow} ) maxRss( %maxRSS{yellow} )  | Logger stats
+ VERSION_USAGE_PATTERN  |\[%hours{cyan}\] version of : node( %node{yellow} ) - v8( %v8{yellow} ) | Logger stats
 
 It possible to colorize the output parser like this : `[%hours{blue}] - %type{yellow} - %error`, and below there is the list of accepted colors :
 
