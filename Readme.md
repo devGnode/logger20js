@@ -1,6 +1,6 @@
 # logger20js-ts
 
-<img src="https://img.shields.io/badge/Git version-1.2.4-yellowgreen"/> <img src="https://img.shields.io/github/languages/top/devGnode/logger20js"/> <img src="https://img.shields.io/badge/Javascript-ES2020-yellow"/> <img src="https://img.shields.io/npm/v/logger20js-ts"/> <img src="https://img.shields.io/node/v/logger20js-ts"/> <img src="https://img.shields.io/appveyor/build/devGnode/logger20js-ts"/> <img src="https://ci.appveyor.com/api/projects/status/github/devGnode/logger20js?svg=true&branch=develop"/>
+<img src="https://img.shields.io/badge/Git version-1.2.3-yellowgreen"/> <img src="https://img.shields.io/github/languages/top/devGnode/logger20js"/> <img src="https://img.shields.io/badge/Javascript-ES2020-yellow"/> <img src="https://img.shields.io/npm/v/logger20js-ts"/> <img src="https://img.shields.io/node/v/logger20js-ts"/> <img src="https://img.shields.io/appveyor/build/devGnode/logger20js-ts"/> <img src="https://ci.appveyor.com/api/projects/status/github/devGnode/logger20js?svg=true&branch=develop"/>
 
 Logger20js-ts is a little basic framework Logger for nodeJs or typescript project. It was written in typescript language.
  
@@ -91,8 +91,26 @@ console.log( tmp.colorize().yellow );
 
 ## Example of basic implementation :
 
++ Typescript implementation :
+
+```typescript
+import {Logger} from "logger20js-ts";
+
+class MyClass{
+    
+    private static LOG : Logger = Logger.factory(MyClass.name);
+
+    public func(){
+        MyClass.LOG.log("one example with args %s - %s ", "foo",123); 
+    }
+
+}
+```
+
++ Javascript Implementation :
+
 ```javascript
-const {Logger}     = require("logger20js-ts");
+const {Logger} = require("logger20js-ts");
 
 
 class MyClass{
@@ -242,21 +260,27 @@ The object passed in parameters must contain the `write` method.
     });
 ```
     
-#### set your owns properties from class
+## set your owns properties from class
 
 you can override the properties configuration for your logger.
 
 - setPropertiesConfigHandle( handle : ***any*** ) : void
+- reloadConfiguration( ) :void
 
 properties keys accepted :
 
-- loggerParser : ***String*** default `%time\t%name\t: %type :\t%error`
+These properties are setting just after have set your handle, its impossible to reload these properties after that.
+
 - loggerOutputDir  : ***string*** default ` `
+- logFileNamePattern : ***String*** default `%date-%id`
+- logFileMaxSize  : ***number*** default `null`
+
+These properties are can be reloaded with method `reloadConfiguration( )`
+
+- loggerParser : ***String*** default `%time\t%name\t: %type :\t%error`
 - saveLog : ***boolean***  default `false`
 - logStdout : ***boolean*** default `true`
 - logLevel : ***String[]***  default `["ALL"]`
-- logFileNamePattern : ***String*** default `%date-%id`
-- logFileMaxSize  : ***number*** default `null`
 - logEnabledColorize : ***boolean*** default `true`
 
 These properties by default are given by the Logger define `getProperty` method in your properties class like below : 
@@ -265,11 +289,14 @@ These properties by default are given by the Logger define `getProperty` method 
 
 example :
 
+If you implement your owns properties config in Typescript, the better way is to implement your class with `IPropertiesFileA` interface.
+
 ```typescript
 import {Logger} from "logger20js-ts"; 
-import {ascii, MapType} from "lib-utils-ts/src/Interface";
+import {ascii, MapType} from "lib-utils-ts/src/Interface"; 
+import {IPropertiesFileA} from "logger20js-ts/src/Loggable";
 
-class PropertiesConfig{
+class PropertiesConfig implements IPropertiesFileA{
     
     private conf : MapType<string,ascii> = null;
 
@@ -277,7 +304,13 @@ class PropertiesConfig{
         // load conf.json    
     }
 
-    getProperty( key , defaultValue ) : ascii{
+    setProperty( key: string, value: any ): void{
+        // if property key is a log property 
+        // you can reload the Logger configuration
+        Logger.reloadConfiguration();    
+    }
+
+    getProperty( key : string , defaultValue?: any ) : any{
         if( /*...*/ ){
             // ....
         }
@@ -381,6 +414,17 @@ Logger.stats().memory();
 import {Logger} from 'logger20js-ts';
 
 Logger.stats().cpu();
+````
+
+For patterns see process.version(), to NodeJs documentation : [See here](https://nodejs.org/api/process.html)
+
++ pattern default : `VERSION_USAGE_PATTERN`
++ version( patter : string ) : void
+
+````typescript
+import {Logger} from 'logger20js-ts';
+
+Logger.stats().version();
 ````
 
 ## Features & stable version
