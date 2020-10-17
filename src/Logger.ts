@@ -5,8 +5,9 @@ import {Utils} from "./Utils";
 import {format} from "util";
 import {HashMap,ArrayList} from "lib-utils-ts";
 import {ascii, List} from "lib-utils-ts/src/Interface";
-import {filterLogLevel, Loggable, strLogLevel} from "./Loggable";
-import {Loader} from "./loader";
+import {filterLogLevel, IPropertiesFileA, Loggable, Pipe, strLogLevel} from "./Loggable";
+import {Loader} from "./Loader";
+import {Define} from "lib-utils-ts/src/Define";
 /****
  * Minimal logger in js-ts.
  *
@@ -46,8 +47,8 @@ export abstract class AbsLogger implements Loggable{
     /***
      * handles
      */
-    protected static pipeStdout :  InstanceType<any>      = null;
-    protected static propertiesConfig : InstanceType<any> = null;
+    protected static pipeStdout :  Pipe<string> = null;
+    protected static propertiesConfig : IPropertiesFileA = null;
     protected static fileNamePattern : String = "%date-%id";
     protected static logfileReuse : String    = null;
     protected static fileMaxSize  : number    = null;
@@ -62,29 +63,6 @@ export abstract class AbsLogger implements Loggable{
      * @param name
      */
     protected constructor( name : String = undefined ) {
-        /***
-         * Rewrite Logger configuration
-         * getProperty :
-         *  @key
-         *  @defaultValue
-         *//***
-            + Next Feature
-            + in real that make no sense to define this here, if you have declared all logger handle but you
-            + modify your owns properties after to have declared them, well with out a reload the configuration
-            + properties of Logger they will not be updated. So i think its better to created a method for
-            + reload the configuration when i wish updated them....
-         */
-        if(AbsLogger.propertiesConfig!==null&&typeof AbsLogger.propertiesConfig?.getProperty === "function"){
-            AbsLogger.parser       = AbsLogger.propertiesConfig.getProperty("loggerParser","%time\t%name\t : %type :\t%error");
-            AbsLogger.saveLog      = AbsLogger.propertiesConfig.getProperty("saveLog", true);
-            AbsLogger.logStdout    = AbsLogger.propertiesConfig.getProperty("logStdout", true);
-            AbsLogger.logLevel     = AbsLogger.propertiesConfig.getProperty("logLevel", ["ALL"]);
-            AbsLogger.fileNamePattern = AbsLogger.propertiesConfig.getProperty("logFileNamePattern","%date-%id");
-            AbsLogger.outputLog       = AbsLogger.propertiesConfig.getProperty("loggerOutputDir","");
-            AbsLogger.fileMaxSize     = AbsLogger.propertiesConfig.getProperty("logFileMaxSize",null);
-            AbsLogger.logfileReuse    = AbsLogger.propertiesConfig.getProperty("logFileReusePath",null);
-            AbsLogger.colorize        = AbsLogger.propertiesConfig.getProperty("logEnabledColorize", true );
-        }
         this.name = name;
     }
 
@@ -133,8 +111,30 @@ export abstract class AbsLogger implements Loggable{
      *
      * Static Configuration
      */
-    public static setPropertiesConfigHandle( handle : any = null ) : void {
+    public static setPropertiesConfigHandle( handle : IPropertiesFileA = null ) : void {
         AbsLogger.propertiesConfig = handle;
+        AbsLogger.setLogRotate(Define.of(handle.getProperty("logRotate")).orNull(null));
+        AbsLogger.setOutputLog(Define.of(handle.getProperty("loggerOutputDir")).orNull(""));
+        AbsLogger.setFileMaxSize(Define.of(handle.getProperty("logFileMaxSize")).orNull(null));
+        AbsLogger.setLogFilePattern(Define.of(handle.getProperty("logFileNamePattern")).orNull("%date-%id"));
+        this.reloadConfiguration( );
+    }
+    /***
+     * To call each time you modify your logProperties
+     * from your owns properties class.
+     *
+     * I gotta ue define, for get good default property cause
+     * if user make a wrong implementation of getProperty for
+     * the default Value that result a corrupt object
+     */
+    protected static reloadConfiguration( ): void{
+        let prop: IPropertiesFileA;
+        if((prop=this.propertiesConfig)===null) return;
+        AbsLogger.parser       = Define.of(prop.getProperty("loggerParser")).orNull(AbsLogger.DEFAULT_LOG_PATTERN_MONO);
+        AbsLogger.saveLog      = Define.of(prop.getProperty("saveLog")).orNull(true);
+        AbsLogger.logStdout    = Define.of(prop.getProperty("logStdout")).orNull( true);
+        AbsLogger.logLevel     = Define.of(prop.getProperty("logLevel")).orNull( ["ALL"]);
+        AbsLogger.colorize     = Define.of(prop.getProperty("logEnabledColorize")).orNull(true );
     }
 
     public static setOutputLog( path : string = "" ) : void {
@@ -166,11 +166,11 @@ export abstract class AbsLogger implements Loggable{
 
     public static popLevel( logType : strLogLevel = "ALL" ) : void{
         let tmp;
-        if((tmp=this.logLevel.indexOf(logType))>-1)this.logLevel = this.logLevel.slice(0,tmp).concat(this.logLevel.slice(tmp+1,this.logLevel.length));
+        if((tmp=AbsLogger.logLevel.indexOf(logType))>-1)AbsLogger.logLevel = AbsLogger.logLevel.slice(0,tmp).concat(AbsLogger.logLevel.slice(tmp+1,AbsLogger.logLevel.length));
     }
 
     public static pushLevel( logType : strLogLevel = "ALL" ): void{
-        if(this.logLevel.indexOf(logType)===-1)this.logLevel.push(logType);
+        if(AbsLogger.logLevel.indexOf(logType)===-1)AbsLogger.logLevel.push(logType);
     }
 
     public static setLogFilePattern( pattern : String = AbsLogger.fileNamePattern ) : void {
@@ -185,7 +185,7 @@ export abstract class AbsLogger implements Loggable{
         AbsLogger.logfileReuse = path;
     }
 
-    public static setPipeStdout( pipe : Object = null ) : void {
+    public static setPipeStdout( pipe : Pipe<string> = null ) : void {
         AbsLogger.pipeStdout = pipe;
     }
 
@@ -197,17 +197,18 @@ export abstract class AbsLogger implements Loggable{
         AbsLogger.cleanUpBeforeSave = state;
     }
 
-    public static setLogRotate( rotate : string = "1d" ) : void {
+    public static setLogRotate( rotate : string = null ) : void {
         let date : Date;
         if((date=Utils.getRotateTimestampOutOf(rotate))){
-            this.rotateOutOfTimestamp = date;
+            AbsLogger.logRotate            = rotate;
+            AbsLogger.rotateOutOfTimestamp = date;
             return void 0;
         }
-        this.rotateOutOfTimestamp = null;
+        AbsLogger.rotateOutOfTimestamp = null;
     }
 
     protected static restartRotate( ) : void{
-        this.rotateOutOfTimestamp = Utils.getRotateTimestampOutOf(AbsLogger.logRotate);
+        AbsLogger.rotateOutOfTimestamp = Utils.getRotateTimestampOutOf(AbsLogger.logRotate);
     }
     /***
      *
@@ -278,20 +279,21 @@ export abstract class AbsLogger implements Loggable{
         try {
             // try to define the name of file in exception
             // and the line number and columns.
+            let exception:string="IndexOfBoundException";
             list = (Error()).stack
-                .replace(/\w+\:\s*\n/, "")
+                .replace(/\w+\:*\s*\n/, "")
                 .explodeAsList(/\n|\r\n/)
                 .stream()
-                .filter(value => !(/AbsLogger\.[\w]{2}/.test(value)))
+                .filter(value => !(/Logger\.[\w]{2,}|node_modules/.test(value)))
                 .findFirst()
                 .orElse("nop (unknown:0:0)")
                 .replace(/.+\(|\)/gi, "")
                 .exec(/([^\\\/]*)$/)[1]
                 .explodeAsList(":");
-            tmp.fileInException = list.get(0);
-            tmp.line            = list.get(1);
-            tmp.column          = list.get(2);
-        }catch (e) {console.warn(e);}
+            tmp.fileInException = list.get(0)||exception;
+            tmp.line            = list.get(1)||exception;
+            tmp.column          = list.get(2)||exception;
+        }catch (e) {/*void 0*/}
 
         HashMap.of<string,any>( Utils.merge({
             type : type,

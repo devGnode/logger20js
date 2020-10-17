@@ -1,3 +1,9 @@
+/***
+ * Static lib utils class :
+ *
+ * Do not use outside of this project these
+ * properties can be often move or removing.
+ */
 export declare class Utils {
     /***
      * @param value

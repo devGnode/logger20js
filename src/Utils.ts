@@ -3,6 +3,12 @@
 import {mkdirSync, statSync, writeFileSync} from "fs";
 import {format} from "util";
 
+/***
+ * Static lib utils class :
+ *
+ * Do not use outside of this project these
+ * properties can be often move or removing.
+ */
 export class Utils{
     /***
      * @param value

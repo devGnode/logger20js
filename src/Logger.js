@@ -20,7 +20,8 @@ var uuid_1 = require("uuid");
 var Utils_1 = require("./Utils");
 var util_1 = require("util");
 var lib_utils_ts_1 = require("lib-utils-ts");
-var loader_1 = require("./loader");
+var Loader_1 = require("./Loader");
+var Define_1 = require("lib-utils-ts/src/Define");
 /****
  * Minimal logger in js-ts.
  *
@@ -35,36 +36,12 @@ var AbsLogger = /** @class */ (function () {
      */
     function AbsLogger(name) {
         if (name === void 0) { name = undefined; }
-        var _a;
         /***
          * object configuration properties
          */
         this.prop = {};
         this.name = null;
         this.pattern = null;
-        /***
-         * Rewrite Logger configuration
-         * getProperty :
-         *  @key
-         *  @defaultValue
-         */ /***
-           + Next Feature
-           + in real that make no sense to define this here, if you have declared all logger handle but you
-           + modify your owns properties after to have declared them, well with out a reload the configuration
-           + properties of Logger they will not be updated. So i think its better to created a method for
-           + reload the configuration when i wish updated them....
-        */
-        if (AbsLogger.propertiesConfig !== null && typeof ((_a = AbsLogger.propertiesConfig) === null || _a === void 0 ? void 0 : _a.getProperty) === "function") {
-            AbsLogger.parser = AbsLogger.propertiesConfig.getProperty("loggerParser", "%time\t%name\t : %type :\t%error");
-            AbsLogger.saveLog = AbsLogger.propertiesConfig.getProperty("saveLog", true);
-            AbsLogger.logStdout = AbsLogger.propertiesConfig.getProperty("logStdout", true);
-            AbsLogger.logLevel = AbsLogger.propertiesConfig.getProperty("logLevel", ["ALL"]);
-            AbsLogger.fileNamePattern = AbsLogger.propertiesConfig.getProperty("logFileNamePattern", "%date-%id");
-            AbsLogger.outputLog = AbsLogger.propertiesConfig.getProperty("loggerOutputDir", "");
-            AbsLogger.fileMaxSize = AbsLogger.propertiesConfig.getProperty("logFileMaxSize", null);
-            AbsLogger.logfileReuse = AbsLogger.propertiesConfig.getProperty("logFileReusePath", null);
-            AbsLogger.colorize = AbsLogger.propertiesConfig.getProperty("logEnabledColorize", true);
-        }
         this.name = name;
     }
     AbsLogger.prototype.warn = function () {
@@ -136,6 +113,29 @@ var AbsLogger = /** @class */ (function () {
     AbsLogger.setPropertiesConfigHandle = function (handle) {
         if (handle === void 0) { handle = null; }
         AbsLogger.propertiesConfig = handle;
+        AbsLogger.setLogRotate(Define_1.Define.of(handle.getProperty("logRotate")).orNull(null));
+        AbsLogger.setOutputLog(Define_1.Define.of(handle.getProperty("loggerOutputDir")).orNull(""));
+        AbsLogger.setFileMaxSize(Define_1.Define.of(handle.getProperty("logFileMaxSize")).orNull(null));
+        AbsLogger.setLogFilePattern(Define_1.Define.of(handle.getProperty("logFileNamePattern")).orNull("%date-%id"));
+        this.reloadConfiguration();
+    };
+    /***
+     * To call each time you modify your logProperties
+     * from your owns properties class.
+     *
+     * I gotta ue define, for get good default property cause
+     * if user make a wrong implementation of getProperty for
+     * the default Value that result a corrupt object
+     */
+    AbsLogger.reloadConfiguration = function () {
+        var prop;
+        if ((prop = this.propertiesConfig) === null)
+            return;
+        AbsLogger.parser = Define_1.Define.of(prop.getProperty("loggerParser")).orNull(AbsLogger.DEFAULT_LOG_PATTERN_MONO);
+        AbsLogger.saveLog = Define_1.Define.of(prop.getProperty("saveLog")).orNull(true);
+        AbsLogger.logStdout = Define_1.Define.of(prop.getProperty("logStdout")).orNull(true);
+        AbsLogger.logLevel = Define_1.Define.of(prop.getProperty("logLevel")).orNull(["ALL"]);
+        AbsLogger.colorize = Define_1.Define.of(prop.getProperty("logEnabledColorize")).orNull(true);
     };
     AbsLogger.setOutputLog = function (path) {
         if (path === void 0) { path = ""; }
@@ -168,13 +168,13 @@ var AbsLogger = /** @class */ (function () {
     AbsLogger.popLevel = function (logType) {
         if (logType === void 0) { logType = "ALL"; }
         var tmp;
-        if ((tmp = this.logLevel.indexOf(logType)) > -1)
-            this.logLevel = this.logLevel.slice(0, tmp).concat(this.logLevel.slice(tmp + 1, this.logLevel.length));
+        if ((tmp = AbsLogger.logLevel.indexOf(logType)) > -1)
+            AbsLogger.logLevel = AbsLogger.logLevel.slice(0, tmp).concat(AbsLogger.logLevel.slice(tmp + 1, AbsLogger.logLevel.length));
     };
     AbsLogger.pushLevel = function (logType) {
         if (logType === void 0) { logType = "ALL"; }
-        if (this.logLevel.indexOf(logType) === -1)
-            this.logLevel.push(logType);
+        if (AbsLogger.logLevel.indexOf(logType) === -1)
+            AbsLogger.logLevel.push(logType);
     };
     AbsLogger.setLogFilePattern = function (pattern) {
         if (pattern === void 0) { pattern = AbsLogger.fileNamePattern; }
@@ -201,16 +201,17 @@ var AbsLogger = /** @class */ (function () {
         AbsLogger.cleanUpBeforeSave = state;
     };
     AbsLogger.setLogRotate = function (rotate) {
-        if (rotate === void 0) { rotate = "1d"; }
+        if (rotate === void 0) { rotate = null; }
         var date;
         if ((date = Utils_1.Utils.getRotateTimestampOutOf(rotate))) {
-            this.rotateOutOfTimestamp = date;
+            AbsLogger.logRotate = rotate;
+            AbsLogger.rotateOutOfTimestamp = date;
             return void 0;
         }
-        this.rotateOutOfTimestamp = null;
+        AbsLogger.rotateOutOfTimestamp = null;
     };
     AbsLogger.restartRotate = function () {
-        this.rotateOutOfTimestamp = Utils_1.Utils.getRotateTimestampOutOf(AbsLogger.logRotate);
+        AbsLogger.rotateOutOfTimestamp = Utils_1.Utils.getRotateTimestampOutOf(AbsLogger.logRotate);
     };
     /***
      *
@@ -290,23 +291,22 @@ var AbsLogger = /** @class */ (function () {
         try {
             // try to define the name of file in exception
             // and the line number and columns.
+            var exception = "IndexOfBoundException";
             list = (Error()).stack
-                .replace(/\w+\:\s*\n/, "")
+                .replace(/\w+\:*\s*\n/, "")
                 .explodeAsList(/\n|\r\n/)
                 .stream()
-                .filter(function (value) { return !(/AbsLogger\.[\w]{2}/.test(value)); })
+                .filter(function (value) { return !(/Logger\.[\w]{2,}|node_modules/.test(value)); })
                 .findFirst()
                 .orElse("nop (unknown:0:0)")
                 .replace(/.+\(|\)/gi, "")
                 .exec(/([^\\\/]*)$/)[1]
                 .explodeAsList(":");
-            tmp.fileInException = list.get(0);
-            tmp.line = list.get(1);
-            tmp.column = list.get(2);
+            tmp.fileInException = list.get(0) || exception;
+            tmp.line = list.get(1) || exception;
+            tmp.column = list.get(2) || exception;
         }
-        catch (e) {
-            console.warn(e);
-        }
+        catch (e) { /*void 0*/ }
         lib_utils_ts_1.HashMap.of(Utils_1.Utils.merge({
             type: type,
             name: name,
@@ -460,8 +460,8 @@ var Logger = /** @class */ (function (_super) {
      */
     Logger.getLoader = function (sizeOf) {
         if (sizeOf === void 0) { sizeOf = 0; }
-        if (!loader_1.Loader.loaderIsBusy())
-            return new loader_1.Loader(sizeOf);
+        if (!Loader_1.Loader.loaderIsBusy())
+            return new Loader_1.Loader(sizeOf);
         return null;
     };
     /***
