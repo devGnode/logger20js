@@ -3,6 +3,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Utils = void 0;
 var fs_1 = require("fs");
 var util_1 = require("util");
+/***
+ * Static lib utils class :
+ *
+ * Do not use outside of this project these
+ * properties can be often move or removing.
+ */
 var Utils = /** @class */ (function () {
     function Utils() {
     }
@@ -27,24 +33,6 @@ var Utils = /** @class */ (function () {
         catch (e) {
             return 0;
         }
-    };
-    Utils.regExp = function (regexp, value, callback) {
-        if (regexp === void 0) { regexp = /.+/; }
-        if (value === void 0) { value = ""; }
-        if (callback === void 0) { callback = undefined; }
-        if (typeof value !== "string")
-            return value;
-        try {
-            var tmp = void 0, toReplace = void 0;
-            while ((tmp = regexp.exec(value))) {
-                toReplace = callback !== undefined ? callback.call(tmp, value) : "";
-                value = value.replace(tmp[0], toReplace);
-            }
-        }
-        catch (e) {
-            return value;
-        }
-        return value;
     };
     /***
      *
@@ -77,24 +65,29 @@ var Utils = /** @class */ (function () {
             return false;
         }
     };
-    Utils.merge = function (objA, objB) {
+    Utils.merge = function (objA) {
         if (objA === void 0) { objA = {}; }
-        if (objB === void 0) { objB = {}; }
+        var args = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            args[_i - 1] = arguments[_i];
+        }
         try {
-            for (var tmp in objB)
-                if (!objA[tmp])
-                    objA[tmp] = objB[tmp];
+            var i = 0, objB = void 0;
+            while ((objB = args[i])) {
+                for (var tmp in objB)
+                    if (!objA[tmp])
+                        objA[tmp] = objB[tmp];
+                i++;
+            }
         }
         catch (e) {
             return objA;
         }
         return objA;
     };
-    Utils.repeat = function (value, loop) {
-        if (value === void 0) { value = ""; }
-        if (loop === void 0) { loop = 0; }
-        return new Array(loop).fill(value).join("");
-    };
+    /***
+     * @param timeStamp
+     */
     Utils.parseTime = function (timeStamp) {
         if (timeStamp === void 0) { timeStamp = 0; }
         var h, m, s, ms;
@@ -107,8 +100,12 @@ var Utils = /** @class */ (function () {
             s = Math.floor(ms % 60);
             ms = Math.round(ms);
         }
-        return util_1.format("%s%s%s%s", (h > 0 ? Utils.round(h) + ":" : ""), m > 0 ? Utils.round(m) + ":" : "", s > 0 ? Utils.round(s) + "." : "", Utils.repeat("0", 3 - String(ms).length) + ms);
+        return util_1.format("%s%s%s%s", (h > 0 ? Utils.round(h) + ":" : ""), m > 0 ? Utils.round(m) + ":" : "", s > 0 ? Utils.round(s) + "." : "", String.repeatString("0", 3 - String(ms).length) + ms);
     };
+    /***
+     * @param rotate
+     * @param date
+     */
     Utils.getRotateTimestampOutOf = function (rotate, date) {
         if (rotate === void 0) { rotate = null; }
         if (date === void 0) { date = null; }

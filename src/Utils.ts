@@ -3,8 +3,13 @@
 import {mkdirSync, statSync, writeFileSync} from "fs";
 import {format} from "util";
 
+/***
+ * Static lib utils class :
+ *
+ * Do not use outside of this project these
+ * properties can be often move or removing.
+ */
 export class Utils{
-
     /***
      * @param value
      */
@@ -12,7 +17,6 @@ export class Utils{
         if(value!==null)return value.toString().length===1?"0"+value:value;
         return value;
     }
-
     /***
      * @param filename
      */
@@ -24,21 +28,6 @@ export class Utils{
             return 0;
         }
     }
-
-    public static regExp( regexp : RegExp = /.+/, value : string = "", callback : Function = undefined ){
-        if(typeof value !=="string") return value;
-        try{
-            let tmp,toReplace;
-            while(( tmp = regexp.exec(value) )){
-                toReplace = callback !==undefined ? callback.call(tmp,value) : "";
-                value = value.replace(tmp[0], toReplace);
-            }
-        }catch (e) {
-            return value;
-        }
-        return value;
-    }
-
     /***
      *
      * @param outputLogDir
@@ -53,7 +42,6 @@ export class Utils{
         }
         writeFileSync(outputLogDir+fileName+".log",data+"\r\n",{ encoding:"utf8", flag:"a"});
     }
-
     /***
      * @param directory
      * @return {boolean}
@@ -66,20 +54,19 @@ export class Utils{
             return false;
         }
     }
-
-    public static merge( objA : Object = {}, objB : Object = {} ) : Object{
+    public static merge( objA : Object = {}, ...args : Object[] ) : Object{
         try{
-            for( let tmp in objB )if( !objA[tmp] ) objA[tmp] = objB[tmp];
-        }catch (e) {
-            return objA;
-        }
+            let i:number=0,objB:Object;
+            while((objB=args[i])) {
+                for (let tmp in objB) if (!objA[tmp]) objA[tmp] = objB[tmp];
+                i++;
+            }
+        }catch (e) {return objA;}
         return objA;
     }
-
-    public static repeat( value :string = "", loop : number = 0 ){
-        return new Array(loop).fill(value).join("");
-    }
-
+    /***
+     * @param timeStamp
+     */
     public static parseTime( timeStamp : number = 0 ) : string {
         let h:number,m:number,s:number,ms:number;
         if(timeStamp<1000) return "0."+timeStamp;
@@ -95,10 +82,13 @@ export class Utils{
             ( h>0?Utils.round(h)+":":""),
             m>0?Utils.round(m)+":":"",
             s>0?Utils.round(s)+".":"",
-            Utils.repeat("0",3-String(ms).length)+ms
+            String.repeatString("0",3-String(ms).length)+ms
         );
     }
-
+    /***
+     * @param rotate
+     * @param date
+     */
     public static getRotateTimestampOutOf( rotate : string = null, date : Date = null ) : Date{
         let tmp : any[],sec : number;
         if((tmp=/^((\d+)d?(\:)*)*((\d+)h?(\:)*)*((\d+)m)*$/.exec(rotate))){

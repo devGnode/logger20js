@@ -1,178 +1,223 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Logger = void 0;
+exports.Logger = exports.AbsLogger = void 0;
 require("lib-utils-ts/src/globalUtils");
 var readline = require("readline");
 var uuid_1 = require("uuid");
 var Utils_1 = require("./Utils");
 var util_1 = require("util");
-var utils_ts_1 = require("lib-utils-ts/export/utils-ts");
-var loader_1 = require("./loader");
-var Logger = /** @class */ (function () {
-    function Logger(name) {
+var lib_utils_ts_1 = require("lib-utils-ts");
+var Loader_1 = require("./Loader");
+var Define_1 = require("lib-utils-ts/src/Define");
+/****
+ * Minimal logger in js-ts.
+ *
+ * npm     : logger20js-ts
+ * version:  1.2.3
+ * Licence : Apache-2.0
+ */
+var AbsLogger = /** @class */ (function () {
+    /***
+     *
+     * @param name
+     */
+    function AbsLogger(name) {
         if (name === void 0) { name = undefined; }
         /***
-         * others
+         * object configuration properties
          */
+        this.prop = {};
         this.name = null;
         this.pattern = null;
-        this.prop = null;
-        /***
-         * Rewrite Logger configuration
-         * getProperty :
-         *  @key
-         *  @defaultValue
-         */
-        if (Logger.propertiesConfig !== null && typeof Logger.propertiesConfig.getProperty === "function") {
-            Logger.parser = Logger.propertiesConfig.getProperty("loggerParser", "%time\t%name\t : %type :\t%error");
-            Logger.saveLog = Logger.propertiesConfig.getProperty("saveLog", true);
-            Logger.logStdout = Logger.propertiesConfig.getProperty("logStdout", true);
-            Logger.logLevel = Logger.propertiesConfig.getProperty("logLevel", ["ALL"]);
-            Logger.fileNamePattern = Logger.propertiesConfig.getProperty("logFileNamePattern", "%date-%id");
-            Logger.outputLog = Logger.propertiesConfig.getProperty("loggerOutputDir", "");
-            Logger.fileMaxSize = Logger.propertiesConfig.getProperty("logFileMaxSize", null);
-            Logger.logfileReuse = Logger.propertiesConfig.getProperty("logFileReusePath", null);
-            Logger.colorize = Logger.propertiesConfig.getProperty("logEnabledColorize", true);
-        }
         this.name = name;
     }
-    Logger.prototype.warn = function () {
+    AbsLogger.prototype.warn = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        Logger.stdout.apply(null, ["warn", this.pattern, this.prop, this.name].concat(Array.from(arguments)));
+        AbsLogger.stdout.apply(null, ["warn", this.pattern, this.prop, this.name].concat(Array.from(arguments)));
     };
-    Logger.prototype.log = function () {
+    AbsLogger.prototype.log = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        Logger.stdout.apply(null, ["log", this.pattern, this.prop, this.name].concat(Array.from(arguments)));
+        AbsLogger.stdout.apply(null, ["log", this.pattern, this.prop, this.name].concat(Array.from(arguments)));
     };
-    Logger.prototype.info = function () {
+    AbsLogger.prototype.info = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        Logger.stdout.apply(null, ["info", this.pattern, this.prop, this.name].concat(Array.from(arguments)));
+        AbsLogger.stdout.apply(null, ["info", this.pattern, this.prop, this.name].concat(Array.from(arguments)));
     };
-    Logger.prototype.debug = function () {
+    AbsLogger.prototype.debug = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        Logger.stdout.apply(null, ["debug", this.pattern, this.prop, this.name].concat(Array.from(arguments)));
+        AbsLogger.stdout.apply(null, ["debug", this.pattern, this.prop, this.name].concat(Array.from(arguments)));
     };
-    Logger.prototype.error = function () {
+    AbsLogger.prototype.error = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        Logger.stdout.apply(null, ["error", this.pattern, this.prop, this.name].concat(Array.from(arguments)));
+        AbsLogger.stdout.apply(null, ["error", this.pattern, this.prop, this.name].concat(Array.from(arguments)));
     };
-    Logger.prototype.custom = function () {
+    AbsLogger.prototype.custom = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        var tmp = Logger.parser;
-        Logger.parser = Logger.parser.replace(/\%error/g, "\r\n%error");
-        Logger.stdout.apply(null, ["custom", this.pattern, this.prop, this.name].concat(Array.from(arguments)));
-        Logger.parser = tmp;
+        var tmp = AbsLogger.parser;
+        AbsLogger.parser = AbsLogger.parser.replace(/\%error/g, "\r\n%error");
+        AbsLogger.stdout.apply(null, ["custom", this.pattern, this.prop, this.name].concat(Array.from(arguments)));
+        AbsLogger.parser = tmp;
     };
-    Logger.prototype.setPattern = function (pattern) {
+    AbsLogger.prototype.setPattern = function (pattern) {
         if (pattern === void 0) { pattern = ""; }
         this.pattern = pattern;
         return this;
     };
-    Logger.prototype.setProp = function (key, value) {
-        if (value === void 0) { value = null; }
-        if (!this.prop)
-            this.prop = {};
+    AbsLogger.prototype.setProp = function (key, value) {
         this.prop[key] = value;
         return this;
     };
-    Logger.setPropertiesConfigHandle = function (handle) {
-        if (handle === void 0) { handle = null; }
-        Logger.propertiesConfig = handle;
-    };
-    Logger.setOutputLog = function (path) {
-        if (path === void 0) { path = ""; }
-        Logger.outputLog = path;
-    };
-    Logger.setSaveLog = function (save) {
-        if (save === void 0) { save = false; }
-        Logger.saveLog = save;
-    };
-    Logger.setLogStdout = function (stdout) {
-        if (stdout === void 0) { stdout = true; }
-        Logger.logStdout = stdout;
+    AbsLogger.prototype.setPropObject = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        Utils_1.Utils.merge.apply(null, [this.prop].concat(Array.from(args)));
+        return this;
     };
     /***
+     *
+     * Static Configuration
+     */
+    AbsLogger.setPropertiesConfigHandle = function (handle) {
+        if (handle === void 0) { handle = null; }
+        AbsLogger.propertiesConfig = handle;
+        AbsLogger.setLogRotate(Define_1.Define.of(handle.getProperty("logRotate")).orNull(null));
+        AbsLogger.setOutputLog(Define_1.Define.of(handle.getProperty("loggerOutputDir")).orNull(""));
+        AbsLogger.setFileMaxSize(Define_1.Define.of(handle.getProperty("logFileMaxSize")).orNull(null));
+        AbsLogger.setLogFilePattern(Define_1.Define.of(handle.getProperty("logFileNamePattern")).orNull("%date-%id"));
+        this.reloadConfiguration();
+    };
+    /***
+     * To call each time you modify your logProperties
+     * from your owns properties class.
+     *
+     * I gotta ue define, for get good default property cause
+     * if user make a wrong implementation of getProperty for
+     * the default Value that result a corrupt object
+     */
+    AbsLogger.reloadConfiguration = function () {
+        var prop;
+        if ((prop = this.propertiesConfig) === null)
+            return;
+        AbsLogger.parser = Define_1.Define.of(prop.getProperty("loggerParser")).orNull(AbsLogger.DEFAULT_LOG_PATTERN_MONO);
+        AbsLogger.saveLog = Define_1.Define.of(prop.getProperty("saveLog")).orNull(true);
+        AbsLogger.logStdout = Define_1.Define.of(prop.getProperty("logStdout")).orNull(true);
+        AbsLogger.logLevel = Define_1.Define.of(prop.getProperty("logLevel")).orNull(["ALL"]);
+        AbsLogger.colorize = Define_1.Define.of(prop.getProperty("logEnabledColorize")).orNull(true);
+    };
+    AbsLogger.setOutputLog = function (path) {
+        if (path === void 0) { path = ""; }
+        AbsLogger.outputLog = path;
+    };
+    AbsLogger.setSaveLog = function (save) {
+        if (save === void 0) { save = false; }
+        AbsLogger.saveLog = save;
+    };
+    AbsLogger.setLogStdout = function (stdout) {
+        if (stdout === void 0) { stdout = true; }
+        AbsLogger.logStdout = stdout;
+    };
+    /***
+     * use  : setPattern method
      * @deprecated
      */
-    Logger.setParser = function (parsing) {
-        if (parsing === void 0) { parsing = Logger.DEFAULT_LOG_PATTERN_MONO; }
-        Logger.parser = parsing;
+    AbsLogger.setParser = function (parsing) {
+        if (parsing === void 0) { parsing = AbsLogger.DEFAULT_LOG_PATTERN_MONO; }
+        AbsLogger.parser = parsing;
     };
-    Logger.setPattern = function (pattern) {
-        if (pattern === void 0) { pattern = Logger.DEFAULT_LOG_PATTERN_MONO; }
-        Logger.parser = pattern;
+    AbsLogger.setPattern = function (pattern) {
+        if (pattern === void 0) { pattern = AbsLogger.DEFAULT_LOG_PATTERN_MONO; }
+        AbsLogger.parser = pattern;
     };
-    Logger.level = function (level) {
+    AbsLogger.level = function (level) {
         if (level === void 0) { level = ["ALL"]; }
-        Logger.logLevel = level;
+        AbsLogger.logLevel = level;
     };
-    Logger.popLevel = function (logType) {
+    AbsLogger.popLevel = function (logType) {
         if (logType === void 0) { logType = "ALL"; }
         var tmp;
-        if ((tmp = this.logLevel.indexOf(logType)) > -1) {
-            this.logLevel = this.logLevel.slice(0, tmp).concat(this.logLevel.slice(tmp + 1, this.logLevel.length));
-        }
+        if ((tmp = AbsLogger.logLevel.indexOf(logType)) > -1)
+            AbsLogger.logLevel = AbsLogger.logLevel.slice(0, tmp).concat(AbsLogger.logLevel.slice(tmp + 1, AbsLogger.logLevel.length));
     };
-    Logger.pushLevel = function (logType) {
+    AbsLogger.pushLevel = function (logType) {
         if (logType === void 0) { logType = "ALL"; }
-        if (this.logLevel.indexOf(logType) === -1)
-            this.logLevel.push(logType);
+        if (AbsLogger.logLevel.indexOf(logType) === -1)
+            AbsLogger.logLevel.push(logType);
     };
-    Logger.setLogFilePattern = function (pattern) {
-        if (pattern === void 0) { pattern = Logger.fileNamePattern; }
-        Logger.fileNamePattern = pattern;
+    AbsLogger.setLogFilePattern = function (pattern) {
+        if (pattern === void 0) { pattern = AbsLogger.fileNamePattern; }
+        AbsLogger.fileNamePattern = pattern;
     };
-    Logger.setFileMaxSize = function (bytes) {
+    AbsLogger.setFileMaxSize = function (bytes) {
         if (bytes === void 0) { bytes = null; }
-        Logger.fileMaxSize = bytes;
+        AbsLogger.fileMaxSize = bytes;
     };
-    Logger.setLogFileReuse = function (path) {
+    AbsLogger.setLogFileReuse = function (path) {
         if (path === void 0) { path = null; }
-        Logger.logfileReuse = path;
+        AbsLogger.logfileReuse = path;
     };
-    Logger.setPipeStdout = function (pipe) {
+    AbsLogger.setPipeStdout = function (pipe) {
         if (pipe === void 0) { pipe = null; }
-        Logger.pipeStdout = pipe;
+        AbsLogger.pipeStdout = pipe;
     };
-    Logger.setColorize = function (status) {
+    AbsLogger.setColorize = function (status) {
         if (status === void 0) { status = true; }
-        Logger.colorize = status;
+        AbsLogger.colorize = status;
     };
-    Logger.setCleanUpBeforeSave = function (state) {
-        if (state === void 0) { state = Logger.cleanUpBeforeSave; }
-        Logger.cleanUpBeforeSave = state;
+    AbsLogger.setCleanUpBeforeSave = function (state) {
+        if (state === void 0) { state = AbsLogger.cleanUpBeforeSave; }
+        AbsLogger.cleanUpBeforeSave = state;
     };
-    Logger.setLogRotate = function (rotate) {
-        if (rotate === void 0) { rotate = "1d"; }
+    AbsLogger.setLogRotate = function (rotate) {
+        if (rotate === void 0) { rotate = null; }
         var date;
         if ((date = Utils_1.Utils.getRotateTimestampOutOf(rotate))) {
-            this.rotateOutOfTimestamp = date;
-            return;
+            AbsLogger.logRotate = rotate;
+            AbsLogger.rotateOutOfTimestamp = date;
+            return void 0;
         }
-        this.rotateOutOfTimestamp = null;
+        AbsLogger.rotateOutOfTimestamp = null;
     };
-    Logger.restartRotate = function () {
-        this.rotateOutOfTimestamp = Utils_1.Utils.getRotateTimestampOutOf(Logger.logRotate);
+    AbsLogger.restartRotate = function () {
+        AbsLogger.rotateOutOfTimestamp = Utils_1.Utils.getRotateTimestampOutOf(AbsLogger.logRotate);
     };
-    Logger.translateColorToInt = function (color) {
+    /***
+     *
+     * @param color
+     */
+    AbsLogger.translateColorToInt = function (color) {
         if (color === void 0) { color = "black"; }
         var colors = [
             ,
@@ -185,17 +230,18 @@ var Logger = /** @class */ (function () {
         return colors.indexOf(color) > -1 ? String(colors.indexOf(color)) : "30";
     };
     /***
+     *
      */
-    Logger.getLoggerFileName = function () {
+    AbsLogger.getLoggerFileName = function () {
         var _a;
-        var d = new Date(), filename = Logger.fileNamePattern;
-        utils_ts_1.HashMap.of({
-            id: Logger.oid,
+        var d = new Date(), filename = AbsLogger.fileNamePattern;
+        lib_utils_ts_1.HashMap.of({
+            id: AbsLogger.oid,
             date: d.toLocaleDateString().replace(/\//g, "-"),
             ms: d.getMilliseconds(), HH: Utils_1.Utils.round(d.getHours()),
             mm: Utils_1.Utils.round(d.getMinutes()), ss: Utils_1.Utils.round(d.getSeconds()),
-            rotate: "." + (String((_a = Logger.rotateOutOfTimestamp) === null || _a === void 0 ? void 0 : _a.getTime()) || "null"),
-            reuse: Logger.logfileReuse
+            rotate: "." + (String((_a = AbsLogger.rotateOutOfTimestamp) === null || _a === void 0 ? void 0 : _a.getTime()) || "null"),
+            reuse: AbsLogger.logfileReuse
         }).each(function (value, key) {
             filename = filename.replace(new RegExp("%" + key), String(value));
         });
@@ -206,11 +252,11 @@ var Logger = /** @class */ (function () {
      * @param type
      * @param colorize
      */
-    Logger.colorizeString = function (message, type, colorize) {
+    AbsLogger.colorizeString = function (message, type, colorize) {
         if (message === void 0) { message = null; }
         if (type === void 0) { type = null; }
-        if (colorize === void 0) { colorize = Logger.colorize; }
-        return message.regExp(Logger.COLORS_REGEXP, function () {
+        if (colorize === void 0) { colorize = AbsLogger.colorize; }
+        return message.regExp(AbsLogger.COLORS_REGEXP, function () {
             var define = null, interrupt = null, _t = type.substring(0, 1).toLowerCase();
             if (!colorize)
                 return this[1];
@@ -218,16 +264,16 @@ var Logger = /** @class */ (function () {
                 // try to define color
                 this[2].regExp(/([lewidc]{1})\?([a-z]+)?\;*/, function () {
                     if (_t.equals(this[1]))
-                        define = Logger.translateColorToInt(this[2]);
+                        define = AbsLogger.translateColorToInt(this[2]);
                 });
                 // default color
                 if (define === null && this[6] !== undefined)
-                    define = Logger.translateColorToInt(this[6].replace(/^\:/, ""));
+                    define = AbsLogger.translateColorToInt(this[6].replace(/^\:/, ""));
                 // return %parser without any color
                 else if (define === null && this[6] === undefined)
                     interrupt = this[1];
             }
-            return (interrupt || util_1.format("\x1b[%sm%s\x1b[0m", define || Logger.translateColorToInt(this[2]), this[1]));
+            return (interrupt || util_1.format("\x1b[%sm%s\x1b[0m", define || AbsLogger.translateColorToInt(this[2]), this[1]));
         });
     };
     /***
@@ -236,72 +282,90 @@ var Logger = /** @class */ (function () {
      * @param name
      * @param dat
      */
-    Logger.parseString = function (message, type, name, dat) {
+    AbsLogger.parseString = function (message, type, name, dat) {
         if (message === void 0) { message = null; }
         if (type === void 0) { type = null; }
         if (name === void 0) { name = null; }
         if (dat === void 0) { dat = null; }
-        var d = new Date(), h = Utils_1.Utils.round(d.getHours()), m = Utils_1.Utils.round(d.getMinutes()), s = Utils_1.Utils.round(d.getSeconds()), ss = d.getMilliseconds();
-        utils_ts_1.HashMap.of(Utils_1.Utils.merge({
+        var list, tmp = {}, d = new Date(), h = Utils_1.Utils.round(d.getHours()), m = Utils_1.Utils.round(d.getMinutes()), s = Utils_1.Utils.round(d.getSeconds()), ss = d.getMilliseconds();
+        try {
+            // try to define the name of file in exception
+            // and the line number and columns.
+            var exception = "IndexOfBoundException";
+            list = (Error()).stack
+                .replace(/\w+\:*\s*\n/, "")
+                .explodeAsList(/\n|\r\n/)
+                .stream()
+                .filter(function (value) { return !(/Logger\.[\w]{2,}|node_modules/.test(value)); })
+                .findFirst()
+                .orElse("nop (unknown:0:0)")
+                .replace(/.+\(|\)/gi, "")
+                .exec(/([^\\\/]*)$/)[1]
+                .explodeAsList(":");
+            tmp.fileInException = list.get(0) || exception;
+            tmp.line = list.get(1) || exception;
+            tmp.column = list.get(2) || exception;
+        }
+        catch (e) { /*void 0*/ }
+        lib_utils_ts_1.HashMap.of(Utils_1.Utils.merge({
             type: type,
             name: name,
             time: d.getTime(),
             hours: util_1.format("%s:%s:%s", h, m, s),
             ms: ss, HH: h, mm: m, ss: s,
+            pid: process.pid, ppid: process.ppid,
             T: type.substr(0, 1).toUpperCase()
-        }, dat || {})).each(function (value, key) {
-            // @ts-ignore
-            message = Utils_1.Utils.regExp(new RegExp("%" + key), message, function () { return value.toString(); });
+        }, dat || {}, tmp))
+            .each(function (value, key) {
+            message = message.regExp(new RegExp("%" + key), function () { return value.toString(); });
         });
         return message;
     };
     /***
      * @param type, message [, Object .... ]
      */
-    Logger.stdout = function () {
+    AbsLogger.stdout = function () {
         var _a;
-        var args = Array.from(arguments), type = args.shift().toUpperCase(), message = args.shift() || Logger.parser, prop = args.shift(), name = args.shift(), out = new utils_ts_1.ArrayList(), cleanArgv = [], hasColor = false;
-        if (Logger.logLevel.indexOf(type.toUpperCase()) > -1 || Logger.logLevel.indexOf("ALL") > -1) {
+        var args = Array.from(arguments), type = args.shift().toUpperCase(), message = args.shift() || AbsLogger.parser, prop = args.shift(), name = args.shift(), out = new lib_utils_ts_1.ArrayList(), cleanArgv = [];
+        if (AbsLogger.logLevel.indexOf(type.toUpperCase()) > -1 || AbsLogger.logLevel.indexOf("ALL") > -1) {
             // cast Object to String
             args.map(function (value) { return (typeof value).equals("object") ? JSON.stringify(value) : value; });
             // check if colorize pattern
-            if (Logger.COLORS_REGEXP.test(message)) {
-                if (Logger.cleanUpBeforeSave && Logger.saveLog) {
-                    out.add(Logger.colorizeString(message, type, false)); // cleanUp
-                }
-                out.add(Logger.colorizeString(message, type, Logger.colorize));
+            if (AbsLogger.COLORS_REGEXP.test(message)) {
+                if (AbsLogger.cleanUpBeforeSave && AbsLogger.saveLog)
+                    out.add(AbsLogger.colorizeString(message, type, false)); // cleanUp
+                out.add(AbsLogger.colorizeString(message, type, AbsLogger.colorize));
             }
             else
                 out.add(message);
             cleanArgv = args.map(function (value) { return typeof value === "string" ? value.colorize().cleanUp : value; });
             out = out.stream()
-                .map(function (value) { return Logger.parseString(value, type, name, prop); })
+                .map(function (value) { return AbsLogger.parseString(value, type, name, prop); })
                 /***
                  * replace message log here avoid
                  * regexp fall in infinite loop
                  */
-                .map(function (value, key) { return value.replace(/\%error|\%message/gi, util_1.format.apply(null, key === 0 && Logger.cleanUpBeforeSave && Logger.saveLog ? cleanArgv : args)); })
+                .map(function (value, key) { return value.replace(/\%error|\%message/gi, util_1.format.apply(null, key === 0 && (!AbsLogger.colorize || AbsLogger.cleanUpBeforeSave && AbsLogger.saveLog) ? cleanArgv : args)); })
                 .getList();
-            if (Logger.saveLog) {
+            if (AbsLogger.saveLog) {
                 // logRotate
-                if (Logger.rotateOutOfTimestamp && (new Date()).getTime() > Logger.rotateOutOfTimestamp.getTime()) {
-                    Logger.restartRotate();
-                }
-                var filename = Logger.getLoggerFileName();
-                if (Logger.fileMaxSize === null || (Logger.fileMaxSize >= 0 &&
-                    Utils_1.Utils.getFileSize(Logger.outputLog + ("/" + filename + ".log")) <= Logger.fileMaxSize)) {
+                if (AbsLogger.rotateOutOfTimestamp && (new Date()).getTime() > AbsLogger.rotateOutOfTimestamp.getTime())
+                    AbsLogger.restartRotate();
+                var filename = AbsLogger.getLoggerFileName();
+                if (AbsLogger.fileMaxSize === null || (AbsLogger.fileMaxSize >= 0 &&
+                    Utils_1.Utils.getFileSize(AbsLogger.outputLog + ("/" + filename + ".log")) <= AbsLogger.fileMaxSize)) {
                     try {
-                        Utils_1.Utils.writeLog(Logger.outputLog, filename, out.get(0));
+                        Utils_1.Utils.writeLog(AbsLogger.outputLog, filename, out.get(0));
                     }
                     catch (e) {
                         console.warn(e);
                     }
                 }
             }
-            if (Logger.logStdout) {
+            if (AbsLogger.logStdout) {
                 message = out.get(out.size() > 1 ? 1 : 0);
-                if (Logger.pipeStdout !== null)
-                    (_a = Logger.pipeStdout) === null || _a === void 0 ? void 0 : _a.write.call(null, message);
+                if (AbsLogger.pipeStdout !== null)
+                    (_a = AbsLogger.pipeStdout) === null || _a === void 0 ? void 0 : _a.write.call(null, message);
                 else {
                     readline.clearLine(process.stdout, 0);
                     readline.cursorTo(process.stdout, 0);
@@ -310,6 +374,58 @@ var Logger = /** @class */ (function () {
             }
         }
     };
+    /**
+     * static Pattern
+     */
+    AbsLogger.DEFAULT_LOG_PATTERN_MONO = "%time\t%name\t: %type :\t%error";
+    AbsLogger.WEBDRIVER_LOG_PATTERN_COLORED = "[%hours{cyan}] %T{w?yellow;e?red}/%name - %error";
+    AbsLogger.EXPRESS_MIDDLEWARE_PATTERN = "[%hours{yellow}] %name %protocol{red} - %method %url +%elapsedTime{yellow}";
+    AbsLogger.STATS_MEMORY_PATTERN = "[%hours{cyan}] %T{cyan}/%name{cyan} memory : heap( %heapUsed{yellow}, %heapTotal{yellow} ) : rss( %rss{yellow} ) : external( %external{yellow} )";
+    AbsLogger.CPU_USAGE_PATTERN = "[%hours{cyan}] user CPUTime( %userCPUTime{yellow} ) system CPUTime( %systemCPUTime{yellow} ) maxRss( %maxRSS{yellow} ) ";
+    AbsLogger.VERSION_USAGE_PATTERN = "[%hours{cyan}] version of : node( %node{yellow} ) - v8( %v8{yellow} )";
+    /***
+     */
+    AbsLogger.COLORS_REGEXP = /(\%[a-zA-z]+)\{([a-z]+|((([lewidc]+)\?[a-z]+?\;*)+?(\:[a-z]+)*)+)\}/;
+    /***
+     * All properties configuration
+     */
+    AbsLogger.parser = AbsLogger.DEFAULT_LOG_PATTERN_MONO;
+    AbsLogger.outputLog = "";
+    AbsLogger.saveLog = false;
+    AbsLogger.logStdout = true;
+    AbsLogger.logLevel = ["ALL"];
+    AbsLogger.colorize = true;
+    AbsLogger.cleanUpBeforeSave = true;
+    AbsLogger.logRotate = null;
+    AbsLogger.rotateOutOfTimestamp = Utils_1.Utils.getRotateTimestampOutOf(AbsLogger.logRotate);
+    /**
+     * output file uuid
+     */
+    AbsLogger.oid = uuid_1.v4();
+    /***
+     * handles
+     */
+    AbsLogger.pipeStdout = null;
+    AbsLogger.propertiesConfig = null;
+    AbsLogger.fileNamePattern = "%date-%id";
+    AbsLogger.logfileReuse = null;
+    AbsLogger.fileMaxSize = null;
+    return AbsLogger;
+}());
+exports.AbsLogger = AbsLogger;
+/***
+ * exportable usable Logger Object
+ */
+var Logger = /** @class */ (function (_super) {
+    __extends(Logger, _super);
+    /***
+     *
+     * @param name
+     */
+    function Logger(name) {
+        if (name === void 0) { name = undefined; }
+        return _super.call(this, name) || this;
+    }
     /***
      * Express Route Logger Middleware
      * pattern :
@@ -344,10 +460,13 @@ var Logger = /** @class */ (function () {
      */
     Logger.getLoader = function (sizeOf) {
         if (sizeOf === void 0) { sizeOf = 0; }
-        if (!loader_1.Loader.loaderIsBusy())
-            return new loader_1.Loader(sizeOf);
+        if (!Loader_1.Loader.loaderIsBusy())
+            return new Loader_1.Loader(sizeOf);
         return null;
     };
+    /***
+     */
+    Logger.stats = function () { return Stats.getInstance(); };
     /***
      * @constructor
      * @param name
@@ -356,35 +475,45 @@ var Logger = /** @class */ (function () {
         if (name === void 0) { name = undefined; }
         return new Logger(name);
     };
-    Logger.DEFAULT_LOG_PATTERN_MONO = "%time\t%name\t: %type :\t%error";
-    Logger.WEBDRIVER_LOG_PATTERN_COLORED = "[%hours{cyan}] %T{w?yellow;e?red}/%name - %error";
-    Logger.EXPRESS_MIDDLEWARE_PATTERN = "[%hours{yellow}] %name %protocol{red} - %method %url +%elapsedTime{yellow}";
-    Logger.COLORS_REGEXP = /(\%[a-zA-z]+)\{([a-z]+|((([lewidc]+)\?[a-z]+?\;*)+?(\:[a-z]+)*)+)\}/;
-    /***
-     * Basic configuration
-     */
-    Logger.parser = Logger.DEFAULT_LOG_PATTERN_MONO;
-    Logger.outputLog = "";
-    Logger.saveLog = false;
-    Logger.logStdout = true;
-    Logger.logLevel = ["ALL"];
-    Logger.colorize = true;
-    Logger.cleanUpBeforeSave = true;
-    Logger.logRotate = null;
-    Logger.rotateOutOfTimestamp = Utils_1.Utils.getRotateTimestampOutOf(Logger.logRotate);
-    /**
-     * output file
-     */
-    Logger.oid = uuid_1.v4();
-    /***
-     * handles
-     */
-    Logger.pipeStdout = null;
-    Logger.propertiesConfig = null;
-    Logger.fileNamePattern = "%date-%id";
-    Logger.logfileReuse = null;
-    Logger.fileMaxSize = null;
     return Logger;
-}());
+}(AbsLogger));
 exports.Logger = Logger;
+/***
+ * Stats Class has been declared here
+ * but i wish to move it to another place
+ */
+var Stats = /** @class */ (function () {
+    function Stats() {
+        this.Log = Logger.factory(Stats.name);
+        this.patternList = null;
+        if (Stats.INSTANCE)
+            return;
+        this.patternList = lib_utils_ts_1.ArrayList.of([Logger.STATS_MEMORY_PATTERN, Logger.CPU_USAGE_PATTERN, Logger.VERSION_USAGE_PATTERN]);
+        this.Log
+            .setPropObject(process.memoryUsage(), process.resourceUsage(), process.versions)
+            .setProp("pid", process.pid)
+            .setProp("ppid", process.ppid);
+    }
+    Stats.prototype.apply = function (key, pattern) {
+        if (pattern === void 0) { pattern = null; }
+        if (pattern)
+            this.patternList.set(key, pattern);
+        this.Log.setPattern(pattern || this.patternList.get(key)).debug();
+    };
+    Stats.prototype.memory = function (pattern) {
+        if (pattern === void 0) { pattern = null; }
+        this.apply(0, pattern);
+    };
+    Stats.prototype.cpu = function (pattern) {
+        if (pattern === void 0) { pattern = null; }
+        this.apply(1, pattern);
+    };
+    Stats.prototype.version = function (pattern) {
+        if (pattern === void 0) { pattern = null; }
+        this.apply(2, pattern);
+    };
+    Stats.getInstance = function () { return Stats.INSTANCE; };
+    Stats.INSTANCE = new Stats();
+    return Stats;
+}());
 //# sourceMappingURL=Logger.js.map

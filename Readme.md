@@ -1,6 +1,6 @@
 # logger20js-ts
 
-<img src="https://img.shields.io/badge/Git version-1.2.2-yellowgreen"/> <img src="https://img.shields.io/github/languages/top/devGnode/logger20js"/> <img src="https://img.shields.io/badge/Javascript-ES2020-yellow"/> <img src="https://img.shields.io/npm/v/logger20js-ts"/> <img src="https://img.shields.io/node/v/logger20js-ts"/> <img src="https://img.shields.io/appveyor/build/devGnode/logger20js-ts"/> <img src="https://ci.appveyor.com/api/projects/status/github/devGnode/logger20js?svg=true&branch=develop"/>
+<img src="https://img.shields.io/badge/Git version-1.2.3-yellowgreen"/> <img src="https://img.shields.io/github/languages/top/devGnode/logger20js"/> <img src="https://img.shields.io/badge/Javascript-ES2020-yellow"/> <img src="https://img.shields.io/npm/v/logger20js-ts"/> <img src="https://img.shields.io/node/v/logger20js-ts"/> <img src="https://img.shields.io/appveyor/build/devGnode/logger20js-ts"/> <img src="https://ci.appveyor.com/api/projects/status/github/devGnode/logger20js?svg=true&branch=develop"/>
 
 Logger20js-ts is a little basic framework Logger for nodeJs or typescript project. It was written in typescript language.
  
@@ -17,25 +17,35 @@ $ npm i logger20js-ts
 
 parser   | output value
 :------------ | -------------    
-type        |  Level type [LOG,ERROR,WARN,INFO,DEBUG,CUSTOM]
-T           | Level type first character [L,E,W,I,D,C]
-name        | Logger name
-time        | TimeStamp 32 bits
-hours       | format type &rarr; HH:mm:ss
-HH          | hours number type
-mm          | minutes number type
-ss          | seconds number type
-error     | log message
-message     | log message
+type            |  Level type [LOG,ERROR,WARN,INFO,DEBUG,CUSTOM]
+T               | Level type first character [L,E,W,I,D,C]
+name            | Logger name
+time            | TimeStamp 32 bits
+hours           | format type &rarr; HH:mm:ss
+HH              | hours number type
+mm              | minutes number type
+ss              | seconds number type
+file            | file 
+line            | line
+column          | column number
+pid         | process identification
+ppid        | parent process identification
+message         | log message
 
-The default pattern look like to `%time\\t%name\\t: %type :\\t%error`.
-But you can customize the pattern like this `[%HH:%mm:%ss] %T/%name - %error`, and you can define multiple parser in your pattern string  `%hours - %error - %hours` 
+The default pattern look like to `%time\t%name\t: %type :\t%message` from `DEFAULT_LOG_PATTERN_MONO` property value.
 
-static property   | value
-:------------ | -------------  
-DEFAULT_LOG_PATTERN_MONO        |  %time\t%name\t: %type :\t%error |
-WEBDRIVER_LOG_PATTERN_COLORED   |   "[%hours{cyan}] %T{w?yellow}/%name - %error" |
-EXPRESS_MIDDLEWARE_PATTERN      |   "[%hours{yellow}] %name %protocol{red} - %method %url +%elapsedTime{yellow}"
+It's possible to customize the output pattern as you want, like this example `[%HH:%mm:%ss] %T/%name - %error`. Possibility to define several same analyzers  `%hours - %message - %hours`.
+
+Listed below some patterns example accessible from static Logger  :
+
+static readonly property   | value | usage
+:------------ | ------------- | -------------  
+DEFAULT_LOG_PATTERN_MONO        |  %time\t%name\t: %type :\t%error | Logger
+WEBDRIVER_LOG_PATTERN_COLORED   |   "\[%hours{cyan}\] %T{w?yellow}/%name - %error" | Logger
+EXPRESS_MIDDLEWARE_PATTERN      |   "\[%hours{yellow}\] %name %protocol{red} - %method %url +%elapsedTime{yellow}" | Express logger middleware
+STATS_MEMORY_PATTERN |\[%hours{cyan}\] %T{cyan}/%name{cyan} memory : heap( %heapUsed{yellow}, %heapTotal{yellow} ) : rss( %rss{yellow} ) : external( %external{yellow} ) | Logger stats
+ CPU_USAGE_PATTERN  | \[%hours{cyan}\] user CPUTime( %userCPUTime{yellow} ) system CPUTime( %systemCPUTime{yellow} ) maxRss( %maxRSS{yellow} )  | Logger stats
+ VERSION_USAGE_PATTERN  |\[%hours{cyan}\] version of : node( %node{yellow} ) - v8( %v8{yellow} ) | Logger stats
 
 It possible to colorize the output parser like this : `[%hours{blue}] - %type{yellow} - %error`, and below there is the list of accepted colors :
 
@@ -47,7 +57,7 @@ It possible to colorize the output parser like this : `[%hours{blue}] - %type{ye
 - magenta
 - cyan
 - white
-- gray
+- grey
 - gray
 
 Background color : add `b` like &rarr; `bwhite`
@@ -81,8 +91,26 @@ console.log( tmp.colorize().yellow );
 
 ## Example of basic implementation :
 
++ Typescript implementation :
+
+```typescript
+import {Logger} from "logger20js-ts";
+
+class MyClass{
+    
+    private static LOG : Logger = Logger.factory(MyClass.name);
+
+    public func(){
+        MyClass.LOG.log("one example with args %s - %s ", "foo",123); 
+    }
+
+}
+```
+
++ Javascript Implementation :
+
 ```javascript
-const {Logger}     = require("logger20js-ts");
+const {Logger} = require("logger20js-ts");
 
 
 class MyClass{
@@ -102,15 +130,15 @@ output :
 1598042191366   MyClass : LOG : one example with args foo - 123
 ````
 
-```javascript
-const {Logger}  = require("logger20js-ts");
+```typescript
+import {Logger}  from "logger20js-ts";
 Logger.setPattern("[%HH:%mm:%ss] %T/%name - %error");
 
 class MyClass{
     
-    static LOG = Logger.factory(MyClass.name);
+    public static LOG = Logger.factory(MyClass.name);
 
-    func(){
+    public func(){
         MyClass.LOG.log("one example with args %s - %s ", "foo",123);
         MyClass.LOG.warn("second example with args %s - %s ", "foo",123);
     }    
@@ -147,7 +175,7 @@ for remove or add just one log level type using : `Logger.popLevel("ALL")` or `L
 
 ### Active log recorder
 
-By default this property is : `true`
+By default this property is at : `true`
 
 ```javascript
 Logger.setSaveLog( true );
@@ -168,20 +196,19 @@ date         | LocalDate format : YYYY-dd-mm
 HH          | hours number type
 mm          | minutes number type
 ss          | seconds number type
-rotate      | overflow timestamp 23 bits
-<s>reuse</s>        | <s>allow reuse of an existing log file</s>
+rotate      | overflow timestamp 32 bits
 
-- fileNamePattern : default `%date-%id`
+- fileNamePattern default : `%date-%id`
 
 ```javascript
 Logger.setLogFilePattern("environment-%date-%id");
 ````
 
-If you want use the `reuse` option in your pattern for your log filename, make sure you have defined the reuse filename with `Logger.setLogFileReuse` without define the extension `.log` in the filename. But this method will be deprecated in the future release, just define your existing log file on your pattern with `setLogFilePattern`.
-
 ### Log rotate
 
-If you want enabled log rotate define in your pattern filename `%rotate` parser.
+- default : `disabled`
+
+If you want enabled log rotate, define in your pattern filename use `%rotate` parser.
 `%rotate` value is an overflow timestamp 32 bits. By default log rotate is disabled.
 
 Some rotate example :
@@ -205,7 +232,6 @@ Logger.setLogRotate("1d"); // new log file every day
 
 #### Configuration
 
-- <s>setParser</s>( parser : ***String*** ) : void
 - setPattern( parser : ***String*** ) : void
 - setOutputLog( path : ***string*** ) : void
 - setSaveLog( saveInFile : ***boolean*** ) : void
@@ -215,7 +241,6 @@ Logger.setLogRotate("1d"); // new log file every day
 - pushLevel( logType : ****strLogLevel*** ) : void
 - setLogFilePattern( pattern : ***String*** ) : void
 - setFileMaxSize( bytes : ***Number*** ) : void
-- <s>setLogFileReuse</s>( fileName : ***string*** ) : void
 - setColorize( status : ***boolean*** ) : void
 - setCleanUpBeforeSave( status : ***boolean*** ) : void *( default true )*
 
@@ -235,23 +260,27 @@ The object passed in parameters must contain the `write` method.
     });
 ```
     
-#### set your owns properties from class
+## set your owns properties from class
 
 you can override the properties configuration for your logger.
 
 - setPropertiesConfigHandle( handle : ***any*** ) : void
+- reloadConfiguration( ) :void
 
 properties keys accepted :
 
-- loggerParser : ***String*** default `%time\t%name\t: %type :\t%error`
+These properties are setting just after have set your handle, its impossible to reload these properties after that.
+
 - loggerOutputDir  : ***string*** default ` `
+- logFileNamePattern : ***String*** default `%date-%id`
+- logFileMaxSize  : ***number*** default `null`
+
+These properties are can be reloaded with method `reloadConfiguration( )`
+
+- loggerParser : ***String*** default `%time\t%name\t: %type :\t%error`
 - saveLog : ***boolean***  default `false`
 - logStdout : ***boolean*** default `true`
 - logLevel : ***String[]***  default `["ALL"]`
-- logPrefixFileName : ***String*** default `null`
-- logFileNamePattern : ***String*** default `%date-%id`
-- logFileMaxSize  : ***number*** default `null`
-- logFileReusePath : ***string*** default `null`
 - logEnabledColorize : ***boolean*** default `true`
 
 These properties by default are given by the Logger define `getProperty` method in your properties class like below : 
@@ -260,18 +289,28 @@ These properties by default are given by the Logger define `getProperty` method 
 
 example :
 
-```javascript
-const {Logger}     = require("logger20js-ts");
+If you implement your owns properties config in Typescript, the better way is to implement your class with `IPropertiesFileA` interface.
 
-class PropertiesConfig{
+```typescript
+import {Logger} from "logger20js-ts"; 
+import {ascii, MapType} from "lib-utils-ts/src/Interface"; 
+import {IPropertiesFileA} from "logger20js-ts/src/Loggable";
+
+class PropertiesConfig implements IPropertiesFileA{
     
-    #conf = null;
+    private conf : MapType<string,ascii> = null;
 
     constructor(){
-    // load conf.json    
+        // load conf.json    
     }
 
-    getProperty( key , defaultValue ){
+    setProperty( key: string, value: any ): void{
+        // if property key is a log property 
+        // you can reload the Logger configuration
+        Logger.reloadConfiguration();    
+    }
+
+    getProperty( key : string , defaultValue?: any ) : any{
         if( /*...*/ ){
             // ....
         }
@@ -331,6 +370,63 @@ setInterval(()=>{
 
 - end() : ***void***
 
+## Stats `>= 1.2.3`
+
+parser   | output value   
+------------ | -------------   
+pid         | process identification
+ppid        | parent process identification
+heapUsed    | heap memory used
+heapTotal   | total heap memory
+rss         | memory rss value
+external    | external memory
+
++ pattern default : `STATS_MEMORY_PATTERN`
++ memory( patter : string ) : void
+
+````typescript
+import {Logger} from 'logger20js-ts';
+
+Logger.stats().memory();
+````
+
++ `userCPUTime`
++ `systemCPUTime`
++ `maxRSS`
++ `sharedMemorySize`
++ `unsharedDataSize`
++ `unsharedStackSize`
++ `minorPageFault`
++ `majorPageFault`
++ `swappedOut`
++ `fsRead`
++ `fsWrite`
++ `ipcSent`
++ `ipcReceived`
++ `signalsCount`
++ `voluntaryContextSwitches`
++ `involuntaryContextSwitches`
+
++ pattern default : ` CPU_USAGE_PATTERN `
++ cpu( patter : string ) : void
+
+````typescript
+import {Logger} from 'logger20js-ts';
+
+Logger.stats().cpu();
+````
+
+For patterns see process.version(), to NodeJs documentation : [See here](https://nodejs.org/api/process.html)
+
++ pattern default : `VERSION_USAGE_PATTERN`
++ version( patter : string ) : void
+
+````typescript
+import {Logger} from 'logger20js-ts';
+
+Logger.stats().version();
+````
+
 ## Features & stable version
 
 - 1.1.2
@@ -349,7 +445,10 @@ setInterval(()=>{
 - 1.2.2 
     -  :
         - Fix Monochrome pattern.
-        
+- 1.2.3
+    - 2020-10 
+       - Add new parser for global logger : pid, ppid, heapUsed, heapTotal, rss, external
+       - Add Stats Log : memory, cpu, version
 
 ## From git
 
