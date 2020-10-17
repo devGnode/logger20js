@@ -8,7 +8,7 @@ import { Colorize } from "./Colorize";
 export declare type filterLogLevel<T> = String[] | [...T[]];
 export declare type strLogLevel = "ALL" | "LOG" | "DEBUG" | "ERROR" | "INFO" | "CUSTOM" | "WARN";
 /**
- * Interfaces Interface
+ * Loggable Interface
  */
 export interface Loggable {
     /***
