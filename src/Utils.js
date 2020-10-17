@@ -3,6 +3,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Utils = void 0;
 var fs_1 = require("fs");
 var util_1 = require("util");
+/***
+ * Static lib utils class :
+ *
+ * Do not use outside of this project these
+ * properties can be often move or removing.
+ */
 var Utils = /** @class */ (function () {
     function Utils() {
     }

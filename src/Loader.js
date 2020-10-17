@@ -59,4 +59,4 @@ var Loader = /** @class */ (function () {
     return Loader;
 }());
 exports.Loader = Loader;
-//# sourceMappingURL=loader.js.map
+//# sourceMappingURL=Loader.js.map

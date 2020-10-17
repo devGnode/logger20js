@@ -39,6 +39,6 @@ export class Colorize{
 /***
  * Extended string native Object
  */
-String.prototype.colorize = function(){
+String.prototype.colorize = function() : Colorize{
     return new Colorize(this.toString());
 };

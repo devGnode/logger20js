@@ -1,6 +1,6 @@
 import "lib-utils-ts/src/globalUtils";
-import { filterLogLevel, Loggable, strLogLevel } from "./Loggable";
-import { Loader } from "./loader";
+import { filterLogLevel, IPropertiesFileA, Loggable, Pipe, strLogLevel } from "./Loggable";
+import { Loader } from "./Loader";
 /****
  * Minimal logger in js-ts.
  *
@@ -40,8 +40,8 @@ export declare abstract class AbsLogger implements Loggable {
     /***
      * handles
      */
-    protected static pipeStdout: InstanceType<any>;
-    protected static propertiesConfig: InstanceType<any>;
+    protected static pipeStdout: Pipe<string>;
+    protected static propertiesConfig: IPropertiesFileA;
     protected static fileNamePattern: String;
     protected static logfileReuse: String;
     protected static fileMaxSize: number;
@@ -69,7 +69,16 @@ export declare abstract class AbsLogger implements Loggable {
      *
      * Static Configuration
      */
-    static setPropertiesConfigHandle(handle?: any): void;
+    static setPropertiesConfigHandle(handle?: IPropertiesFileA): void;
+    /***
+     * To call each time you modify your logProperties
+     * from your owns properties class.
+     *
+     * I gotta ue define, for get good default property cause
+     * if user make a wrong implementation of getProperty for
+     * the default Value that result a corrupt object
+     */
+    protected static reloadConfiguration(): void;
     static setOutputLog(path?: string): void;
     static setSaveLog(save?: boolean): void;
     static setLogStdout(stdout?: boolean): void;
@@ -85,7 +94,7 @@ export declare abstract class AbsLogger implements Loggable {
     static setLogFilePattern(pattern?: String): void;
     static setFileMaxSize(bytes?: number): void;
     static setLogFileReuse(path?: String): void;
-    static setPipeStdout(pipe?: Object): void;
+    static setPipeStdout(pipe?: Pipe<string>): void;
     static setColorize(status?: boolean): void;
     static setCleanUpBeforeSave(state?: boolean): void;
     static setLogRotate(rotate?: string): void;
