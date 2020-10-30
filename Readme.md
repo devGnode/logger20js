@@ -12,7 +12,93 @@ Logger20js-ts is a little basic framework Logger for nodeJs or typescript projec
 $ npm i logger20js-ts
 ``
 
+## Example of basic implementation :
+
++ Typescript implementation :
+
+```typescript
+import {Logger} from "logger20js-ts";
+
+class MyClass{
+    
+    private static LOG : Logger = Logger.factory(MyClass.name);
+
+    public func(){
+        MyClass.LOG.log("one example with args %s - %s ", "foo",123); 
+    }
+
+}
+```
+
++ Javascript Implementation :
+
+```javascript
+const {Logger} = require("logger20js-ts");
+
+
+class MyClass{
+    
+    static LOG = Logger.factory(MyClass.name);
+
+    func(){
+        MyClass.LOG.log("one example with args %s - %s ", "foo",123); 
+    }
+
+}
+```
+
+output :
+
+````text
+1598042191366   MyClass : LOG : one example with args foo - 123
+````
+
+```typescript
+import {Logger}  from "logger20js-ts";
+Logger.setPattern("[%HH:%mm:%ss] %T/%name - %error");
+
+class MyClass{
+    
+    public static LOG = Logger.factory(MyClass.name);
+
+    public func(){
+        MyClass.LOG.log("one example with args %s - %s ", "foo",123);
+        MyClass.LOG.warn("second example with args %s - %s ", "foo",123);
+    }    
+
+}
+```
+
+output :
+
+````text
+[22:33:40] L/MyClass - one example with args foo - 123
+[22:33:40] W/MyClass - second example with args foo - 123
+````
+
 ## Usage
+
+#### static constructor 
+
+- factory( name : ***String***  ) : Logger
+
+#### Configuration
+
+- setPattern( parser : ***String*** ) : void
+- setOutputLog( path : ***string*** ) : void
+- setSaveLog( saveInFile : ***boolean*** ) : void
+- setLogStdout( stout : ***boolean*** ) : void
+- level( level : ***Array*** ) : void
+- popLevel( logType : ***strLogLevel***  ) : void
+- pushLevel( logType : ****strLogLevel*** ) : void
+- setLogFilePattern( pattern : ***String*** ) : void
+- setFileMaxSize( bytes : ***Number*** ) : void
+- setColorize( status : ***boolean*** ) : void
+- setCleanUpBeforeSave( status : ***boolean*** ) : void *( default true )*
+- setPropertiesConfigHandle( path : ***string***, json ***boolean*** = true ) : void 
+
+To see the default configuration values go to section `set your owns properties from class`
+
 ### Log pattern
 
 parser   | output value
@@ -89,68 +175,10 @@ console.log( tmp.colorize().yellow );
 
 ```
 
-## Example of basic implementation :
-
-+ Typescript implementation :
-
-```typescript
-import {Logger} from "logger20js-ts";
-
-class MyClass{
-    
-    private static LOG : Logger = Logger.factory(MyClass.name);
-
-    public func(){
-        MyClass.LOG.log("one example with args %s - %s ", "foo",123); 
-    }
-
-}
-```
-
-+ Javascript Implementation :
+### Control console output 
 
 ```javascript
-const {Logger} = require("logger20js-ts");
-
-
-class MyClass{
-    
-    static LOG = Logger.factory(MyClass.name);
-
-    func(){
-        MyClass.LOG.log("one example with args %s - %s ", "foo",123); 
-    }
-
-}
-```
-
-output :
-
-````text
-1598042191366   MyClass : LOG : one example with args foo - 123
-````
-
-```typescript
-import {Logger}  from "logger20js-ts";
-Logger.setPattern("[%HH:%mm:%ss] %T/%name - %error");
-
-class MyClass{
-    
-    public static LOG = Logger.factory(MyClass.name);
-
-    public func(){
-        MyClass.LOG.log("one example with args %s - %s ", "foo",123);
-        MyClass.LOG.warn("second example with args %s - %s ", "foo",123);
-    }    
-
-}
-```
-
-output :
-
-````text
-[22:33:40] L/MyClass - one example with args foo - 123
-[22:33:40] W/MyClass - second example with args foo - 123
+Logger.setLogStdout( true );
 ````
 
 ### Log level
@@ -187,7 +215,7 @@ Logger.setSaveLog( true );
 Logger.setOutputLog(process.cwd()+"/logs");
 ````
 
-### log filename
+### Log filename
 
 parser   | output value   
 ------------ | -------------    
@@ -224,28 +252,6 @@ Logger.setLogFilePattern("%id%rotate");
 Logger.setLogRotate("1d"); // new log file every day
 ````
 
-### static access
-
-#### static constructor 
-
-- factory( name : ***String***  ) : Logger
-
-#### Configuration
-
-- setPattern( parser : ***String*** ) : void
-- setOutputLog( path : ***string*** ) : void
-- setSaveLog( saveInFile : ***boolean*** ) : void
-- setLogStdout( stout : ***boolean*** ) : void
-- level( level : ***Array*** ) : void
-- popLevel( logType : ***strLogLevel***  ) : void
-- pushLevel( logType : ****strLogLevel*** ) : void
-- setLogFilePattern( pattern : ***String*** ) : void
-- setFileMaxSize( bytes : ***Number*** ) : void
-- setColorize( status : ***boolean*** ) : void
-- setCleanUpBeforeSave( status : ***boolean*** ) : void *( default true )*
-- setPropertiesConfigHandle( path : ***string*** ) : void 
-
-For see the default configuration value go to section `set your owns properties from class`
 
 #### create redirect stdout message parsed
 
@@ -274,6 +280,7 @@ Template example :
 loggerParser        = [%hours{cyan}] %T{w?yellow;e?red}/%name - %error
 logStdout           = true
 logEnabledColorize  = true
+logLevel            = ["ALL"]
 
 # Recorder Opts
 saveLog             = true
@@ -287,7 +294,7 @@ logFileNamePattern  = %id-%rotate
 Logger.setPropertiesFile("./config.properties", false);
 ````
 
-### From json file
+### From json file `>= 1.2.4`
 
 Template example : 
 
@@ -296,6 +303,7 @@ Template example :
 	"loggerParser":"[%hours{cyan}] %T{w?yellow;e?red}/%name - %error",
 	"logStdout":"true",
 	"logEnabledColorize":"true",
+    "logLevel": ["ALL"],
 	
 	"saveLog":"true",
 	"logRotate":"1d:1h",
@@ -479,26 +487,21 @@ Logger.stats().version();
 - 1.1.2
     - initial commit
 - 1.1.7
-    - 2020-02-10 :
-        - Fix - removing of the Stream.js file, this extension creates conflicts with many other node js libraries like, Protractor, Selenium, resulting in an exception of the native Stream object.
-        - Integration of background color in cli  
-        - Fix/Add - cleaning message before to save in a log file
+    - Fix - removing of the Stream.js file, this extension creates conflicts with many other node js libraries like, Protractor, Selenium, resulting in an exception of the native Stream object.
+    - Integration of background color in cli  
+    - Fix/Add - cleaning message before to save in a log file
 - 1.2.0 
-    - 2020-06-10 :
-        - Add Express middleware route logger
-        - Implementation - log rotate
-        - Stabilization of the colors functionality
-        - Implementation of a basic loader feature / \[=====>.... \] 00%
+    - Add Express middleware route logger
+    - Implementation - log rotate
+    - Stabilization of the colors functionality
+    - Implementation of a basic loader feature / \[=====>.... \] 00%
 - 1.2.2 
-    -  :
-        - Fix Monochrome pattern.
+    - Fix Monochrome pattern.
 - 1.2.3
-    - 2020-10 
-       - Add new parser for global logger : pid, ppid, heapUsed, heapTotal, rss, external
-       - Add Stats Log : memory, cpu, version
+    - Add new parser for global logger : pid, ppid, heapUsed, heapTotal, rss, external
+     - Add Stats Log : memory, cpu, version
 - 1.2.4
-    - 2020-11 
-       - Enhancement properties file `*.porperties` or `*.json`     
+    - Enhancement properties file `*.porperties` or `*.json`   
 
 ## From git
 
