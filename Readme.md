@@ -1,6 +1,6 @@
 # logger20js-ts
 
-<img src="https://img.shields.io/badge/Git version-1.2.3-yellowgreen"/> <img src="https://img.shields.io/github/languages/top/devGnode/logger20js"/> <img src="https://img.shields.io/badge/Javascript-ES2020-yellow"/> <img src="https://img.shields.io/npm/v/logger20js-ts"/> <img src="https://img.shields.io/node/v/logger20js-ts"/> <img src="https://img.shields.io/appveyor/build/devGnode/logger20js-ts"/> <img src="https://ci.appveyor.com/api/projects/status/github/devGnode/logger20js?svg=true&branch=develop"/>
+<img src="https://img.shields.io/badge/Git version-1.2.4-yellowgreen"/> <img src="https://img.shields.io/github/languages/top/devGnode/logger20js"/> <img src="https://img.shields.io/badge/Javascript-ES2020-yellow"/> <img src="https://img.shields.io/npm/v/logger20js-ts"/> <img src="https://img.shields.io/node/v/logger20js-ts"/> <img src="https://img.shields.io/appveyor/build/devGnode/logger20js-ts"/> <img src="https://ci.appveyor.com/api/projects/status/github/devGnode/logger20js?svg=true&branch=develop"/>
 
 Logger20js-ts is a little basic framework Logger for nodeJs or typescript project. It was written in typescript language.
  
@@ -60,7 +60,7 @@ It possible to colorize the output parser like this : `[%hours{blue}] - %type{ye
 - grey
 - gray
 
-Background color : add `b` like &rarr; `bwhite`
+For set background color add `b` letter in front of name color like this example : &rarr; `bwhite`
  
 :warning: Just one exception only for `%T` and `%type` parser it possible to customize the output color by type of log level [L,E,W,I,D,C] :
 
@@ -243,6 +243,7 @@ Logger.setLogRotate("1d"); // new log file every day
 - setFileMaxSize( bytes : ***Number*** ) : void
 - setColorize( status : ***boolean*** ) : void
 - setCleanUpBeforeSave( status : ***boolean*** ) : void *( default true )*
+- setPropertiesConfigHandle( path : ***string*** ) : void 
 
 For see the default configuration value go to section `set your owns properties from class`
 
@@ -260,14 +261,60 @@ The object passed in parameters must contain the `write` method.
     });
 ```
     
-## set your owns properties from class
+## set your owns properties
 
-you can override the properties configuration for your logger.
+You can override properties configuration for your logger.
+
+### From properties file `>= 1.2.4`
+
+Template example : 
+
+````properties
+# pattern
+loggerParser        = [%hours{cyan}] %T{w?yellow;e?red}/%name - %error
+logStdout           = true
+logEnabledColorize  = true
+
+# Recorder Opts
+saveLog             = true
+logRotate           = 1d:1h
+loggerOutputDir     = target/log
+logFileMaxSize      = 32000
+logFileNamePattern  = %id-%rotate
+````
+
+```typescript
+Logger.setPropertiesFile("./config.properties", false);
+````
+
+### From json file
+
+Template example : 
+
+````json
+{	
+	"loggerParser":"[%hours{cyan}] %T{w?yellow;e?red}/%name - %error",
+	"logStdout":"true",
+	"logEnabledColorize":"true",
+	
+	"saveLog":"true",
+	"logRotate":"1d:1h",
+	"loggerOutputDir":"target/log",
+	"logFileMaxSize":"32000",
+	"logFileNamePattern":"%id-%rotate"
+}
+````
+
+```typescript
+Logger.setPropertiesFile("./config.json");
+````
+
+### From class 
 
 - setPropertiesConfigHandle( handle : ***any*** ) : void
 - reloadConfiguration( ) :void
 
-properties keys accepted :
+Properties keys accepted :
 
 These properties are setting just after have set your handle, its impossible to reload these properties after that.
 
@@ -449,6 +496,9 @@ Logger.stats().version();
     - 2020-10 
        - Add new parser for global logger : pid, ppid, heapUsed, heapTotal, rss, external
        - Add Stats Log : memory, cpu, version
+- 1.2.4
+    - 2020-11 
+       - Enhancement properties file `*.porperties` or `*.json`     
 
 ## From git
 

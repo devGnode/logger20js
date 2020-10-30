@@ -1,8 +1,4 @@
 import "./Colorize";
-/***
- * ALPHA CLASS
- * v 0.0.1
- */
 export declare class Loader {
     private static isBusy;
     private logger;

@@ -2,6 +2,7 @@
  *
  */
 import {Colorize} from "./Colorize";
+import {IPropertiesFile} from "lib-utils-ts/src/Interface";
 /**
  * Type
  */
@@ -54,23 +55,6 @@ export interface Pipe<E> {
 /***
  * If you use yor owns properties file, implement your PropertiesFile class
  * with this interfaces.
- */
-export interface IPropertiesFile<K extends string|number,V>{
-    /***
-     *
-     * @param key
-     * @param value
-     */
-    setProperty( key : K, value : V ) : void
-    /***
-     *
-     * @param key
-     * @param defaultValue
-     */
-    getProperty( key: K, defaultValue?: V ) : V
-}
-/***
- *
  */
 export interface IPropertiesFileA extends IPropertiesFile<string, any>{}
 /***

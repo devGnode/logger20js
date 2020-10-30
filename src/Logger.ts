@@ -4,15 +4,17 @@ import {v4} from 'uuid';
 import {Utils} from "./Utils";
 import {format} from "util";
 import {HashMap,ArrayList} from "lib-utils-ts";
-import {ascii, List} from "lib-utils-ts/src/Interface";
+import {ascii, List, properties} from "lib-utils-ts/src/Interface";
 import {filterLogLevel, IPropertiesFileA, Loggable, Pipe, strLogLevel} from "./Loggable";
 import {Loader} from "./Loader";
 import {Define} from "lib-utils-ts/src/Define";
+import {Properties, PropertiesJson} from "lib-utils-ts/src/file/Properties";
+import {AbstractIOFile, FileWriter, FileReader} from "lib-utils-ts/src/file/IOStream";
 /****
  * Minimal logger in js-ts.
  *
  * npm     : logger20js-ts
- * version:  1.2.3
+ * version:  1.2.4
  * Licence : Apache-2.0
  */
 export abstract class AbsLogger implements Loggable{
@@ -27,7 +29,7 @@ export abstract class AbsLogger implements Loggable{
     public static readonly VERSION_USAGE_PATTERN           : string = "[%hours{cyan}] version of : node( %node{yellow} ) - v8( %v8{yellow} )";
     /***
      */
-    private static readonly COLORS_REGEXP : RegExp = /(\%[a-zA-z]+)\{([a-z]+|((([lewidc]+)\?[a-z]+?\;*)+?(\:[a-z]+)*)+)\}/;
+    private static readonly COLORS_REGEXP : RegExp = /(\%[a-zA-z0-9]+)\{([a-z]+|((([lewidc]+)\?[a-z]+?\;*)+?(\:[a-z]+)*)+)\}/;
     /***
      * All properties configuration
      */
@@ -47,8 +49,8 @@ export abstract class AbsLogger implements Loggable{
     /***
      * handles
      */
-    protected static pipeStdout :  Pipe<string> = null;
-    protected static propertiesConfig : IPropertiesFileA = null;
+    protected static pipeStdout :  Pipe<string>            = null;
+    protected static propertiesConfig : properties<Object>|IPropertiesFileA = null;
     protected static fileNamePattern : String = "%date-%id";
     protected static logfileReuse : String    = null;
     protected static fileMaxSize  : number    = null;
@@ -111,13 +113,30 @@ export abstract class AbsLogger implements Loggable{
      *
      * Static Configuration
      */
-    public static setPropertiesConfigHandle( handle : IPropertiesFileA = null ) : void {
+    public static setPropertiesConfigHandle( handle : properties<Object>|IPropertiesFileA = null ) : void {
         AbsLogger.propertiesConfig = handle;
-        AbsLogger.setLogRotate(Define.of(handle.getProperty("logRotate")).orNull(null));
-        AbsLogger.setOutputLog(Define.of(handle.getProperty("loggerOutputDir")).orNull(""));
-        AbsLogger.setFileMaxSize(Define.of(handle.getProperty("logFileMaxSize")).orNull(null));
-        AbsLogger.setLogFilePattern(Define.of(handle.getProperty("logFileNamePattern")).orNull("%date-%id"));
-        this.reloadConfiguration( );
+        AbsLogger.setLogRotate(Define.of(<string>handle.getProperty("logRotate")).orNull(null));
+        AbsLogger.setOutputLog(Define.of(<string>handle.getProperty("loggerOutputDir")).orNull(""));
+        AbsLogger.setFileMaxSize(Define.of(<number>handle.getProperty("logFileMaxSize")).orNull(null));
+        AbsLogger.setLogFilePattern(Define.of(<string>handle.getProperty("logFileNamePattern")).orNull("%date-%id"));
+        AbsLogger.reloadConfiguration( );
+    }
+    /***
+     * lib-utils-ts :
+     *  + InputStreamReader
+     *
+     * readFile :
+     *  *.json
+     *  *.properties
+     *
+     * @param path
+     * @param json
+     */
+    public static setPropertiesFile( path : string, json :boolean = true ) : void{
+        let properties: properties<Object>;
+        properties  = json ? new PropertiesJson() : new Properties();
+        properties.load(new FileReader(path));
+        AbsLogger.setPropertiesConfigHandle(properties);
     }
     /***
      * To call each time you modify your logProperties
@@ -128,13 +147,13 @@ export abstract class AbsLogger implements Loggable{
      * the default Value that result a corrupt object
      */
     protected static reloadConfiguration( ): void{
-        let prop: IPropertiesFileA;
-        if((prop=this.propertiesConfig)===null) return;
-        AbsLogger.parser       = Define.of(prop.getProperty("loggerParser")).orNull(AbsLogger.DEFAULT_LOG_PATTERN_MONO);
-        AbsLogger.saveLog      = Define.of(prop.getProperty("saveLog")).orNull(true);
-        AbsLogger.logStdout    = Define.of(prop.getProperty("logStdout")).orNull( true);
-        AbsLogger.logLevel     = Define.of(prop.getProperty("logLevel")).orNull( ["ALL"]);
-        AbsLogger.colorize     = Define.of(prop.getProperty("logEnabledColorize")).orNull(true );
+        let prop: properties<Object>|IPropertiesFileA;
+        if((prop=AbsLogger.propertiesConfig)===null) return;
+        AbsLogger.setPattern(Define.of(<string>prop.getProperty("loggerParser")).orNull(AbsLogger.DEFAULT_LOG_PATTERN_MONO));
+        AbsLogger.setSaveLog(Define.of(Boolean.of(prop.getProperty("saveLog"))).orNull(true));
+        AbsLogger.setLogStdout(Define.of(Boolean.of(prop.getProperty("logStdout"))).orNull( true));
+        AbsLogger.setColorize(Define.of(Boolean.of(prop.getProperty("logEnabledColorize"))).orNull(true ));
+        AbsLogger.level(Define.of<filterLogLevel<strLogLevel>>( prop instanceof Properties ?  JSON.parse(<string>prop.getProperty("logLevel")) : prop.getProperty("logLevel") ).orNull(["ALL"] ));
     }
 
     public static setOutputLog( path : string = "" ) : void {
@@ -181,6 +200,10 @@ export abstract class AbsLogger implements Loggable{
         AbsLogger.fileMaxSize = bytes;
     }
 
+    /***
+     * @deprecated
+     * @param path
+     */
     public static setLogFileReuse( path : String = null ) : void {
         AbsLogger.logfileReuse = path;
     }
@@ -346,22 +369,24 @@ export abstract class AbsLogger implements Loggable{
                let filename = AbsLogger.getLoggerFileName();
                if(
                    AbsLogger.fileMaxSize===null || ( AbsLogger.fileMaxSize>=0 &&
-                   Utils.getFileSize(AbsLogger.outputLog+`/${filename}.log`) <= AbsLogger.fileMaxSize )
+                   AbstractIOFile.getFileSize(AbsLogger.outputLog+`/${filename}.log`) <= AbsLogger.fileMaxSize )
                ){
-                   try {Utils.writeLog(AbsLogger.outputLog, filename, out.get(0) )}
-                   catch (e) {
+                   try {
+                       AbsLogger.outputLog += !AbsLogger.outputLog.endsWith("/") ? "/" : "";
+                       (new FileWriter(AbsLogger.outputLog+filename+".log")).write(`${out.get(0)}\n`,false);
+                   }catch (e) {
                        console.warn(e);
                    }
                }
           }
-            if(AbsLogger.logStdout) {
+          if(AbsLogger.logStdout) {
                 message = out.get( out.size()>1? 1 : 0 );
                 if(AbsLogger.pipeStdout!==null) AbsLogger.pipeStdout?.write.call(null,message); else {
                     readline.clearLine(process.stdout,0);
                     readline.cursorTo( process.stdout,0);
                     process.stdout.write(message+"\n");
                 }
-            }
+          }
         }
     }
 }
