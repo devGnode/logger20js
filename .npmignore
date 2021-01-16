@@ -1,19 +1,14 @@
+# CI/CD
+*.yml
+#
+Test.*
+test.*
+
 #
 .idea/
 .vscode/
 node_modules/
 logs/
 
-# CI/CD
-*.yml
-
 #
-Test.*
-test.*
-test/
-dev-test/
-
-#
-*.d.ts
-*.js
-*.js.map
+**/src/*.js.map
