@@ -2,11 +2,12 @@ import {Logger} from "./Logger";
 import Timeout = NodeJS.Timeout;
 import "./Colorize";
 import {Loggable} from "./Loggable";
+import {loader} from "lib-utils-ts/src/Interface";
 /***
  * ALPHA CLASS
  * v 0.0.1
  */
-export class Loader{
+export class Loader implements loader{
 
     private static isBusy = false;
 
@@ -32,7 +33,7 @@ export class Loader{
         if(Loader.isBusy) return;
         this.timerHandle = setInterval(()=>{
             perc = Math.round( (this.size / this.maxSize )*100 );
-            process.stdout.write("\r"+Loader.wheel[next++]+"-[ \x1b[36m" + Loader.repeat("=",perc) +"\x1b[0m ] "+perc+"%");
+            process.stdout.write("\r"+Loader.wheel[next++]+"-[ \x1b[36m" + Loader.repeat("=",perc||0) +"\x1b[0m ] "+(perc||0)+"%");
             next &=3;
             if(perc>=100) this.end(endingMessage);
         } ,250 );
@@ -51,7 +52,11 @@ export class Loader{
         Loader.isBusy = false;
     }
 
-    public close( ) : void{ this.end("close loader event"); }
+    public setSizeOf( size:number): Loader{ this.maxSize=size; return this;}
+
+    public error( message:string ): void{  this.logger.error(message); }
+
+    public close( ) : void{ this.end("loader has been closed"); }
 
     public static loaderIsBusy( ) : boolean { return Loader.isBusy; }
 }
