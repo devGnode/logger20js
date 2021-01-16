@@ -1,6 +1,6 @@
 {
   "name": "logger20js-ts",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "author": "Maroder - <devgnode@gmail.com>",
   "description": "logger for nodejs and typescript - logger20js-ts",
   "main": "export/Logger20js.js",
@@ -12,7 +12,9 @@
   "scripts": {
     "test": "ts-node Test.ts",
     "build": "tsc",
-    "another": "ts-node utils.ts"
+    "another": "ts-node utils.ts",
+    "net": "ts-node Testnet.ts",
+    "testProperties": "ts-node Test.prop.ts"
   },
   "engines": {
     "node": ">= 12.14.1"

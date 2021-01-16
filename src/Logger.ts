@@ -9,7 +9,8 @@ import {filterLogLevel, IPropertiesFileA, Loggable, Pipe, strLogLevel} from "./L
 import {Loader} from "./Loader";
 import {Define} from "lib-utils-ts/src/Define";
 import {Properties, PropertiesJson} from "lib-utils-ts/src/file/Properties";
-import {AbstractIOFile, FileWriter, FileReader} from "lib-utils-ts/src/file/IOStream";
+import {AbstractIOFile, FileWriter} from "lib-utils-ts/src/file/IOStream";
+import {flombok} from "lib-utils-ts/src/flombok";
 /****
  * Minimal logger in js-ts.
  *
@@ -57,9 +58,12 @@ export abstract class AbsLogger implements Loggable{
     /***
      * object configuration properties
      */
-    protected prop : Object           = {};
-    protected name : String           = null;
-    protected pattern : String        = null;
+    @flombok.ENUMERABLE(false,{})
+    protected prop : Object;
+    @flombok.ENUMERABLE(false)
+    protected name : String;
+    @flombok.ENUMERABLE(false)
+    protected pattern : String;
     /***
      *
      * @param name
@@ -135,7 +139,7 @@ export abstract class AbsLogger implements Loggable{
     public static setPropertiesFile( path : string, json :boolean = true ) : void{
         let properties: properties<Object>;
         properties  = json ? new PropertiesJson() : new Properties();
-        properties.load(new FileReader(path));
+        properties.load(this.getClass().getResourcesAsStream(path));
         AbsLogger.setPropertiesConfigHandle(properties);
     }
     /***

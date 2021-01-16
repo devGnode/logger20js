@@ -503,7 +503,7 @@ Logger.stats().version();
 - 1.2.4
     - Enhancement properties file `*.porperties` or `*.json`   
 
-## From git
+## :octocat: From git 
 
 ``
 $ git clone https://github.com/devGnode/logger20js.git
