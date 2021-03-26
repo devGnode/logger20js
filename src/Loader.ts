@@ -18,8 +18,8 @@ export class Loader implements loader{
 
     private static wheel : Array<String> = ["\\", "|", "/", "-"];
 
-    constructor( size : number = 0 ) {
-        this.logger = Logger.factory("Loader").setPattern("");
+    constructor( size : number = 0, logger:Logger = null ) {
+        this.logger = logger || Logger.factory("Loader").setPattern("");
         this.maxSize = size;
     }
 
@@ -54,7 +54,7 @@ export class Loader implements loader{
 
     public setSizeOf( size:number): Loader{ this.maxSize=size; return this;}
 
-    public error( message:string ): void{  this.logger.error(message); }
+    public error( message:string ): void{ this.logger.error(message); this.end("An error has occurred"); }
 
     public close( ) : void{ this.end("loader has been closed"); }
 
