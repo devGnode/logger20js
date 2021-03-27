@@ -503,6 +503,9 @@ Logger.stats().version();
 - 1.2.4
     - Enhancement properties file `*.porperties` or `*.json`   
 
+- 2.0.0-stable :
+    - Build by Jenkins in a Docker Alpine:3.12, use `lib-utils-ts:2.0.0-stable`
+    
 ## :octocat: From git 
 
 ``
