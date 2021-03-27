@@ -1,3 +1,6 @@
+# CI/CD
+*.yml
+
 #
 .idea/
 .vscode/
@@ -7,11 +10,13 @@ target/
 
 # CI/CD
 *.yml
+jenkinsfile
 
 #
-Test*.*
+Test.*
 test.*
 test/
+Test/
 dev-test/
 
 #
